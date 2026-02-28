@@ -1,0 +1,105 @@
+"""FastAPI application entry point."""
+
+import logging
+from contextlib import asynccontextmanager
+
+import asyncpg
+import httpx
+from fastapi import FastAPI
+
+from src.config import settings
+from src.middleware.errors import register_error_handlers
+from src.middleware.rate_limit import RateLimitMiddleware
+from src.routes import google_compat, routes, telemetry, driver_state
+from src.services.zones import ZoneIndex
+from src.storage.redis import create_redis
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Application lifespan: startup and shutdown."""
+    # Startup
+    logger.info("Starting up Motion API...")
+
+    # Create asyncpg connection pool
+    app.state.pg_pool = await asyncpg.create_pool(
+        settings.database_url,
+        min_size=2,
+        max_size=10,
+    )
+    logger.info("PostgreSQL connection pool created")
+
+    # Connect to Redis
+    app.state.redis = await create_redis(settings.redis_url)
+    logger.info("Redis connected")
+
+    # Create HTTP client
+    app.state.http_client = httpx.AsyncClient()
+    logger.info("HTTP client created")
+
+    # Load zone polygons
+    zone_index = ZoneIndex()
+    try:
+        await zone_index.load(app.state.pg_pool)
+        logger.info(
+            "Zone index loaded: %d school zones, %d residential zones",
+            len(zone_index.school_geoms),
+            len(zone_index.residential_geoms),
+        )
+    except Exception as exc:
+        logger.warning("Could not load zone polygons: %s", exc)
+    app.state.zone_index = zone_index
+
+    # Run Alembic migrations programmatically
+    try:
+        from alembic.config import Config
+        from alembic import command
+        import os
+
+        alembic_cfg = Config()
+        # Find the migrations directory relative to this file
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        migrations_dir = os.path.join(base_dir, "migrations")
+        alembic_cfg.set_main_option("script_location", migrations_dir)
+        alembic_cfg.set_main_option("sqlalchemy.url", settings.database_url.replace("postgresql://", "postgresql+asyncpg://"))
+        command.upgrade(alembic_cfg, "head")
+        logger.info("Alembic migrations applied")
+    except Exception as exc:
+        logger.warning("Could not run Alembic migrations (tables may already exist): %s", exc)
+
+    yield
+
+    # Shutdown
+    logger.info("Shutting down Motion API...")
+    await app.state.pg_pool.close()
+    await app.state.redis.close()
+    await app.state.http_client.aclose()
+    logger.info("Shutdown complete")
+
+
+app = FastAPI(
+    title="Freight Router API",
+    version="1.0.0",
+    description="Drop-in replacement for Google Routes API with segment-level physics enrichment for heavy freight.",
+    lifespan=lifespan,
+)
+
+# Register error handlers
+register_error_handlers(app)
+
+# Register rate limiting middleware
+app.add_middleware(RateLimitMiddleware)
+
+# Include routers
+app.include_router(google_compat.router)
+app.include_router(routes.router)
+app.include_router(telemetry.router)
+app.include_router(driver_state.router)
+
+
+@app.get("/health")
+async def health():
+    return {"status": "ok"}

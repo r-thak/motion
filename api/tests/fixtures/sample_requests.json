@@ -1,0 +1,115 @@
+[
+    {
+        "name": "simple_a_to_b",
+        "description": "Simple A→B in Chicago with no optional fields",
+        "body": {
+            "origin": {
+                "location": {
+                    "latLng": {
+                        "latitude": 41.878876,
+                        "longitude": -87.635918
+                    }
+                }
+            },
+            "destination": {
+                "location": {
+                    "latLng": {
+                        "latitude": 41.882702,
+                        "longitude": -87.623520
+                    }
+                }
+            }
+        }
+    },
+    {
+        "name": "with_vehicle_and_driver",
+        "description": "A→B with vehicleSpec, driverState (fatigueScore: 0.7), and departureTime",
+        "body": {
+            "origin": {
+                "location": {
+                    "latLng": {
+                        "latitude": 41.878876,
+                        "longitude": -87.635918
+                    }
+                }
+            },
+            "destination": {
+                "location": {
+                    "latLng": {
+                        "latitude": 41.882702,
+                        "longitude": -87.623520
+                    }
+                }
+            },
+            "vehicleSpec": {
+                "type": "SEMI_TRAILER",
+                "grossWeightKg": 40000.0
+            },
+            "driverState": {
+                "fatigueScore": 0.7,
+                "attentionScore": 0.6,
+                "stressLevel": 0.3
+            },
+            "departureTime": "2026-03-01T14:00:00Z"
+        }
+    },
+    {
+        "name": "with_intermediate_and_avoid_tolls",
+        "description": "A→B→C with one intermediate waypoint (via=false) and avoidTolls: true",
+        "body": {
+            "origin": {
+                "location": {
+                    "latLng": {
+                        "latitude": 41.878876,
+                        "longitude": -87.635918
+                    }
+                }
+            },
+            "destination": {
+                "location": {
+                    "latLng": {
+                        "latitude": 41.882702,
+                        "longitude": -87.623520
+                    }
+                }
+            },
+            "intermediates": [
+                {
+                    "location": {
+                        "latLng": {
+                            "latitude": 41.880000,
+                            "longitude": -87.630000
+                        }
+                    },
+                    "via": false
+                }
+            ],
+            "routeModifiers": {
+                "avoidTolls": true
+            }
+        }
+    },
+    {
+        "name": "with_alternative_routes",
+        "description": "A→B with computeAlternativeRoutes: true",
+        "body": {
+            "origin": {
+                "location": {
+                    "latLng": {
+                        "latitude": 41.878876,
+                        "longitude": -87.635918
+                    }
+                }
+            },
+            "destination": {
+                "location": {
+                    "latLng": {
+                        "latitude": 41.882702,
+                        "longitude": -87.623520
+                    }
+                }
+            },
+            "computeAlternativeRoutes": true
+        }
+    }
+]

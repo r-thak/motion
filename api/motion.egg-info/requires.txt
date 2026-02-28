@@ -1,0 +1,16 @@
+fastapi>=0.131
+uvicorn[standard]>=0.41
+httpx>=0.28
+asyncpg>=0.31
+redis>=7.0
+pydantic>=2.12
+pydantic-settings>=2.13
+shapely>=2.0
+numpy>=2.4
+python-ulid>=3.1
+alembic>=1.18
+polyline>=2.0
+
+[dev]
+pytest>=8.0
+pytest-asyncio>=0.24
