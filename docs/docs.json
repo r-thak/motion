@@ -1,7 +1,7 @@
 {
   "$schema": "https://mintlify.com/docs.json",
   "theme": "mint",
-  "name": "Mint Starter Kit",
+  "name": "Motion",
   "colors": {
     "primary": "#16A34A",
     "light": "#07C983",
@@ -11,76 +11,57 @@
   "navigation": {
     "tabs": [
       {
-        "tab": "Guides",
-        "groups": [
-          {
-            "group": "Getting started",
-            "pages": [
-              "index",
-              "quickstart",
-              "development"
-            ]
-          },
-          {
-            "group": "Customization",
-            "pages": [
-              "essentials/settings",
-              "essentials/navigation"
-            ]
-          },
-          {
-            "group": "Writing content",
-            "pages": [
-              "essentials/markdown",
-              "essentials/code",
-              "essentials/images",
-              "essentials/reusable-snippets"
-            ]
-          },
-          {
-            "group": "AI tools",
-            "pages": [
-              "ai-tools/cursor",
-              "ai-tools/claude-code",
-              "ai-tools/windsurf"
-            ]
-          }
-        ]
-      },
-      {
         "tab": "API reference",
         "groups": [
           {
-            "group": "API documentation",
+            "group": "Overview",
             "pages": [
               "api-reference/introduction"
             ]
           },
           {
-            "group": "Endpoint examples",
+            "group": "Google-Compatible",
             "pages": [
-              "api-reference/endpoint/get",
-              "api-reference/endpoint/create",
-              "api-reference/endpoint/delete",
+              "api-reference/endpoint/google-compute-routes"
+            ]
+          },
+          {
+            "group": "Routes",
+            "pages": [
+              "api-reference/endpoint/create-route",
+              "api-reference/endpoint/get-route",
+              "api-reference/endpoint/delete-route"
+            ]
+          },
+          {
+            "group": "Telemetry",
+            "pages": [
+              "api-reference/endpoint/get-telemetry"
+            ]
+          },
+          {
+            "group": "Driver State",
+            "pages": [
+              "api-reference/endpoint/update-driver-state"
+            ]
+          },
+          {
+            "group": "Webhooks",
+            "pages": [
               "api-reference/endpoint/webhook"
+            ]
+          },
+          {
+            "group": "Health",
+            "pages": [
+              "api-reference/endpoint/health"
             ]
           }
         ]
       }
     ],
     "global": {
-      "anchors": [
-        {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
-          "icon": "book-open-cover"
-        },
-        {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
-          "icon": "newspaper"
-        }
-      ]
+      "anchors": []
     }
   },
   "logo": {

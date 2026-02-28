@@ -1,4 +1,73 @@
 ---
-title: 'New Plant'
-openapi: 'WEBHOOK /plant/webhook'
+title: 'Webhook Events'
 ---
+
+Include a `webhookUrl` when creating a route via `POST /v1/routes` to receive an HTTP callback when computation finishes. Delivery is best-effort with automatic retries.
+
+## Event Types
+
+| Type | Description |
+|------|-------------|
+| `route.complete` | Route computed successfully |
+| `route.failed` | Route computation failed |
+
+## Payload
+
+### route.complete
+
+```json
+{
+  "id": "evt_01HYX4MPK5XJQJG0NB0PRSDVWC",
+  "type": "route.complete",
+  "createdAt": "2026-02-28T15:12:35Z",
+  "data": {
+    "routeId": "route_01HYX3MPK5XJQJG0NB0PRSDVWC",
+    "status": "complete"
+  }
+}
+```
+
+### route.failed
+
+```json
+{
+  "id": "evt_01HYX4MPK5XJQJG0NB0PRSDVWC",
+  "type": "route.failed",
+  "createdAt": "2026-02-28T15:12:35Z",
+  "data": {
+    "routeId": "route_01HYX3MPK5XJQJG0NB0PRSDVWC",
+    "status": "failed",
+    "error": {
+      "code": "no_route_found",
+      "message": "No route could be found between the given locations."
+    }
+  }
+}
+```
+
+## Retries
+
+Failed deliveries are retried up to 3 times with exponential backoff (1s, 2s, 4s). Each attempt has a 5-second timeout.
+
+## Receiving Webhooks
+
+Your endpoint should accept `POST` requests and return a `2xx` status to acknowledge receipt:
+
+```python
+from fastapi import FastAPI, Request
+
+app = FastAPI()
+
+@app.post("/webhook")
+async def handle_webhook(request: Request):
+    event = await request.json()
+    
+    if event["type"] == "route.complete":
+        route_id = event["data"]["routeId"]
+        # Fetch and process the completed route
+    elif event["type"] == "route.failed":
+        error = event["data"]["error"]
+        # Handle the failure
+    
+    return {"received": True}
+```

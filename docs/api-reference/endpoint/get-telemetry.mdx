@@ -1,0 +1,55 @@
+---
+title: 'Get Route Telemetry'
+openapi: 'GET /v1/routes/{route_id}/telemetry'
+---
+
+Returns segment-level physics data for a completed route, including a route-wide summary.
+
+<Note>
+  The route must have `status: "complete"`. If the route is still processing, this endpoint returns `404`.
+</Note>
+
+## Segment Fields
+
+| Field | Description |
+|-------|-------------|
+| `gradePercent` | Road grade from USGS elevation data |
+| `curvatureDegreesPerKm` | Bearing change per kilometer |
+| `fuelBurnLiters` | Estimated fuel consumption |
+| `stressFactor` | Driver stress score |
+| `zoneFlags` | Active zones (`SCHOOL_ZONE`, `RESIDENTIAL`) |
+| `speedLimitKmh` | Posted speed limit |
+| `roadClass` | Road classification (e.g. `MOTORWAY`, `PRIMARY`) |
+
+## Summary
+
+The `summary` object aggregates data across all segments:
+
+```json
+{
+  "summary": {
+    "totalFuelBurnLiters": 12.5,
+    "totalGradeGainMeters": 45.2,
+    "totalGradeLossMeters": 38.7,
+    "maxGradePercent": 6.2,
+    "averageCurvatureDegreesPerKm": 8.4,
+    "schoolZoneCount": 2,
+    "residentialSegmentCount": 5,
+    "overallStressScore": 0.42
+  }
+}
+```
+
+## Pagination
+
+Segments are paginated. Use `cursor` and `limit` query parameters to page through results:
+
+```bash
+# First page (default: 50 segments)
+curl http://localhost:8000/v1/routes/{route_id}/telemetry
+
+# Next page
+curl http://localhost:8000/v1/routes/{route_id}/telemetry?cursor=50&limit=50
+```
+
+Check `hasMore` and `nextCursor` in the response to determine if more pages are available.

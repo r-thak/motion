@@ -1,0 +1,88 @@
+---
+title: 'Create Route'
+openapi: 'POST /v1/routes'
+---
+
+Creates a route resource and computes the route with full physics enrichment.
+
+## Response Behavior
+
+The API attempts to compute the route synchronously. Depending on complexity:
+
+| Outcome | Status | `routes` array | What to do |
+|---------|--------|----------------|------------|
+| Computed quickly | `200` | Populated | Use the data directly |
+| Still computing | `202` | Empty | Poll `GET /v1/routes/{id}` or use a webhook |
+
+## Webhooks
+
+Include a `webhookUrl` in your request to receive a notification when an async route completes:
+
+```json
+{
+  "origin": { "location": { "latLng": { "latitude": 41.878, "longitude": -87.636 } } },
+  "destination": { "location": { "latLng": { "latitude": 41.705, "longitude": -87.613 } } },
+  "webhookUrl": "https://example.com/webhook"
+}
+```
+
+See [Webhook Events](/api-reference/endpoint/webhook) for payload details.
+
+## Idempotency
+
+Pass an `Idempotency-Key` header to safely retry requests. The same key with the same body returns the original response. Reusing a key with a different body returns `422`.
+
+## Example
+
+<CodeGroup>
+```bash cURL
+curl -X POST http://localhost:8000/v1/routes \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "origin": {
+      "location": {
+        "latLng": {"latitude": 41.878, "longitude": -87.636}
+      }
+    },
+    "destination": {
+      "location": {
+        "latLng": {"latitude": 41.705, "longitude": -87.613}
+      }
+    },
+    "vehicleSpec": {"type": "SEMI_TRAILER"},
+    "driverState": {"fatigueScore": 0.5}
+  }'
+```
+
+```python Python
+import httpx
+import time
+
+response = httpx.post(
+    "http://localhost:8000/v1/routes",
+    json={
+        "origin": {
+            "location": {
+                "latLng": {"latitude": 41.878, "longitude": -87.636}
+            }
+        },
+        "destination": {
+            "location": {
+                "latLng": {"latitude": 41.705, "longitude": -87.613}
+            }
+        },
+        "vehicleSpec": {"type": "SEMI_TRAILER"},
+        "driverState": {"fatigueScore": 0.5}
+    }
+)
+
+route = response.json()
+
+# Poll if the route is still being computed
+while route["status"] == "processing":
+    time.sleep(1)
+    route = httpx.get(f"http://localhost:8000/v1/routes/{route['id']}").json()
+
+print(route["routes"][0]["distanceMeters"])
+```
+</CodeGroup>
