@@ -1,0 +1,12 @@
+{
+    "image": "mcr.microsoft.com/devcontainers/base:debian",
+    "workspaceFolder": "/workspaces/motion",
+    "features": {
+        "ghcr.io/devcontainers/features/python:1": {
+            "version": "latest"
+        },
+        "ghcr.io/devcontainers-extra/features/bun:1": {}
+    },
+    "postCreateCommand": "cd /workspaces/motion",
+    "postStartCommand": "git config --global --add safe.directory ${containerWorkspaceFolder}"
+}
