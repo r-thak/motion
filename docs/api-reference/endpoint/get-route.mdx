@@ -1,0 +1,43 @@
+---
+title: 'Get Route'
+openapi: 'GET /v1/routes/{route_id}'
+---
+
+Retrieve a route by its ID. Use this to check the status of an async route or to fetch completed route data.
+
+## Route Status
+
+| Status | `routes` array | `error` field | Meaning |
+|--------|----------------|---------------|---------|
+| `processing` | Empty | `null` | Route is still being computed |
+| `complete` | Populated | `null` | Route is ready |
+| `failed` | Empty | Populated | Computation failed |
+
+Completed routes are cached and expire after 6 hours.
+
+## Polling Example
+
+If `POST /v1/routes` returned `202`, poll until the route is ready:
+
+```python
+import httpx
+import time
+
+route_id = "route_01HYX3MPK5XJQJG0NB0PRSDVWC"
+
+while True:
+    route = httpx.get(f"http://localhost:8000/v1/routes/{route_id}").json()
+    
+    if route["status"] == "complete":
+        print(f"Route ready: {route['routes'][0]['distanceMeters']}m")
+        break
+    elif route["status"] == "failed":
+        print(f"Error: {route['error']['message']}")
+        break
+    
+    time.sleep(1)
+```
+
+<Note>
+  Routes created via the Google-compatible endpoint are also accessible here — use the `X-Route-Id` response header from that endpoint.
+</Note>
