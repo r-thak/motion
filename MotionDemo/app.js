@@ -188,15 +188,16 @@
   function getElevation(lat, lng) {
     const key = cacheKey(lat, lng);
     if (elevationCache.has(key)) return Promise.resolve(elevationCache.get(key));
-    const url = `${USGS_BASE}?x=${lng}&y=${lat}&units=Meters`;
+    const url = `${USGS_BASE}?x=${lng}&y=${lat}&units=Meters&wkid=4326&includeDate=false`;
     return fetch(url)
       .then((r) => r.json())
       .then((data) => {
-        const v = data.value != null ? data.value : 0;
+        const v = data.value != null ? parseFloat(data.value) : 0;
         elevationCache.set(key, v);
         return v;
       })
-      .catch(() => {
+      .catch((e) => {
+        console.warn('Elevation fetch failed:', e);
         elevationCache.set(key, 0);
         return 0;
       });
@@ -425,9 +426,16 @@
     const otherFuel = otherAgg.fuelL;
     if (Number.isFinite(ourFuel) && Number.isFinite(otherFuel) && otherFuel > 0) {
       const pct = ((1 - ourFuel / otherFuel) * 100).toFixed(1);
-      cmp.textContent = pct > 0 ? `Our method ~${pct}% less fuel.` : `Difference: ${(ourFuel - otherFuel).toFixed(2)} L.`;
+      const diffL = Math.abs(otherFuel - ourFuel).toFixed(2);
+      if (pct > 0) {
+        cmp.textContent = `Our method saves ~${pct}% (${diffL} L) fuel.`;
+      } else if (pct < 0) {
+        cmp.textContent = `Google route uses ${Math.abs(pct)}% (${diffL} L) less fuel.`;
+      } else {
+        cmp.textContent = 'Roughly equal fuel this cycle.';
+      }
     } else if (Number.isFinite(ourFuel) && Number.isFinite(otherFuel)) {
-      cmp.textContent = 'Difference: ' + (ourFuel - otherFuel).toFixed(2) + ' L.';
+      cmp.textContent = 'Difference: ' + Math.abs(ourFuel - otherFuel).toFixed(2) + ' L.';
     } else {
       cmp.textContent = 'Run simulation to compare.';
     }

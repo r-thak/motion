@@ -388,11 +388,12 @@
     const cmp = document.getElementById('comparison-text');
     if (Number.isFinite(ourAgg.fuelL) && Number.isFinite(googleAgg.fuelL) && googleAgg.fuelL > 0 && ourAgg.fuelL > 0) {
       const pct = ((1 - ourAgg.fuelL / googleAgg.fuelL) * 100).toFixed(1);
+      const diffL = Math.abs(googleAgg.fuelL - ourAgg.fuelL).toFixed(2);
       const elevDiff = (googleAgg.elevGainM - ourAgg.elevGainM).toFixed(0);
       if (Number(pct) > 0) {
-        cmp.innerHTML = `<span style="color:#0ea5e9;font-weight:600">Our model saves ~${pct}% fuel</span> by choosing routes with ${elevDiff}m less climbing and fewer sharp turns.`;
+        cmp.innerHTML = `<span style="color:#0ea5e9;font-weight:600">Our model saves ~${pct}% (${diffL} L) fuel</span> by choosing routes with ${elevDiff}m less climbing and fewer sharp turns.`;
       } else if (Number(pct) < 0) {
-        cmp.innerHTML = `Google route uses ${Math.abs(Number(pct))}% less fuel this cycle. Routes vary by terrain.`;
+        cmp.innerHTML = `Google route uses ${Math.abs(Number(pct))}% (${diffL} L) less fuel this cycle. Routes vary by terrain.`;
       } else {
         cmp.textContent = 'Roughly equal fuel this cycle.';
       }
