@@ -36,7 +36,6 @@
                 <option value="balanced">Balanced</option>
                 <option value="time_optimal">Time Optimal</option>
                 <option value="fuel_optimal">Fuel Optimal (Avoids hills & turns)</option>
-                <option value="fatigue_aware">Fatigue Aware</option>
             </select>
         </div>
 
@@ -46,12 +45,6 @@
                 <option value="SEMI_TRAILER">Semi Trailer (36t)</option>
                 <option value="BOX_TRUCK">Box Truck (10t)</option>
             </select>
-        </div>
-
-        <div class="control-group">
-            <label>Driver Fatigue Score: <span id="fatigue-val">0.2</span></label>
-            <input type="range" id="driver-fatigue" min="0" max="1" step="0.1" value="0.2"
-                oninput="document.getElementById('fatigue-val').innerText = this.value">
         </div>
 
         <div class="control-group">
@@ -89,10 +82,7 @@
                     <span class="label">Elev Gain</span>
                     <span class="value" id="res-elev">--</span>
                 </div>
-                <div class="metric">
-                    <span class="label">Stress</span>
-                    <span class="value" id="res-stress">--</span>
-                </div>
+
                 <div class="metric">
                     <span class="label">Turns</span>
                     <span class="value" id="res-turns">--</span>
@@ -104,8 +94,7 @@
                 <p style="font-size: 12px; opacity: 0.7; margin-bottom: 8px;">Stripe-style API Actions:</p>
                 <button class="secondary-btn" id="btn-fetch-telemetry" onclick="fetchTelemetry()">Poll
                     Telemetry</button>
-                <button class="secondary-btn action-btn-orange" id="btn-patch-driver"
-                    onclick="patchDriverState()">Update Driver State</button>
+
                 <button class="secondary-btn action-btn-red" id="btn-delete-route" onclick="deleteRoute()">Delete Route
                     Job</button>
             </div>
