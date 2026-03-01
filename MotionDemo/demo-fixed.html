@@ -5,6 +5,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Motion Route Demo — Our Model vs Google Maps</title>
+  <link rel="icon" type="image/x-icon" href="IMAGE.ico" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="styles.css" />
 </head>
@@ -16,11 +17,11 @@
       <p class="tagline">Freight-optimised routing vs Google Maps</p>
 
       <section class="config-section">
-        <label for="api-key">Google API key <span class="muted">(optional — enables right panel)</span></label>
-        <input id="api-key" type="password" placeholder="Paste key for Google Routes comparison" autocomplete="off" />
-        <p class="config-hint">Same physics model (USGS elevation, weight-based fuel, turn penalty) applied to
-          <strong>both</strong> routes — only the road choice differs.</p>
-        <p class="config-hint" style="margin-top:0.4rem">Without a key the right panel uses straight-line paths.</p>
+        <p class="config-hint">Backend uses Google API via secure proxy. Same physics model (USGS elevation,
+          weight-based fuel, turn penalty) applied to
+          <strong>both</strong> routes — only the road choice differs.
+        </p>
+
         <p class="config-hint" style="margin-top:0.4rem">
           API: <code>cd api && python dev_server.py --real</code>
         </p>
@@ -92,7 +93,7 @@
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="waypoints-sf.js"></script>
-  <script src="app-fixed.js"></script>
+  <script src="app-fixed.js?v=v2"></script>
 </body>
 
 </html>

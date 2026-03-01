@@ -5,6 +5,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Motion Route Demo — Fuel‑Efficient vs Standard Routing</title>
+  <link rel="icon" type="image/x-icon" href="IMAGE.ico" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="styles.css" />
 </head>
@@ -16,14 +17,9 @@
       <p class="tagline">Fuel‑efficient routing demo</p>
 
       <section class="config-section">
-        <label for="api-key">Google API key <span class="required">(required)</span></label>
-        <input id="api-key" type="password" placeholder="Paste your API key here" autocomplete="off" />
-        <label for="our-api-url">Our route API URL <span class="muted">(optional)</span></label>
-        <input id="our-api-url" type="url" placeholder="https://your-api.com/directions" />
-        <p class="config-hint">Enable <strong>Maps JavaScript API</strong> and <strong>Routes API</strong>. Waypoints
+        <p class="config-hint">Backend uses Google API via secure proxy. Waypoints
           from 75 saved SF locations; routes use Google for road geometry.</p>
-        <p class="config-hint"><a href="demo-fixed.html">Our Model vs Baseline</a> — uses Motion API (no Google key
-          needed, requires <code>localhost:8000</code>).</p>
+        <p class="config-hint"><a href="demo-fixed.html">Our Model vs Baseline</a> — uses Motion API.</p>
         <button type="button" id="btn-start" class="btn-start">Start simulation</button>
       </section>
 
@@ -88,7 +84,7 @@
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="waypoints-sf.js"></script>
-  <script src="app.js"></script>
+  <script src="app.js?v=v2"></script>
 </body>
 
 </html>
