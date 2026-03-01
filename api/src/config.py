@@ -2,7 +2,7 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    valhalla_url: str = "http://localhost:8002"
+    valhalla_url: str = "http://localhost:8003"
     database_url: str = "postgresql://freight:freight@localhost:5432/freight"
     redis_url: str = "redis://localhost:6379/0"
     cache_ttl: int = 21600  # 6 hours in seconds

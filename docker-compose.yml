@@ -2,7 +2,7 @@ services:
   valhalla:
     image: ghcr.io/valhalla/valhalla-scripted:latest
     ports:
-      - "8002:8002"
+      - "8003:8002"
     volumes:
       - valhalla_data:/data
     environment:
