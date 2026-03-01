@@ -2,23 +2,3 @@
 title: 'Delete Route'
 openapi: 'DELETE /v1/routes/{route_id}'
 ---
-
-Permanently deletes a route and its associated telemetry data. Returns `404` if the route does not exist.
-
-## Example
-
-<CodeGroup>
-```bash cURL
-curl -X DELETE http://localhost:8000/v1/routes/route_01HYX3MPK5XJQJG0NB0PRSDVWC
-```
-
-```python Python
-import httpx
-
-response = httpx.delete(
-    "http://localhost:8000/v1/routes/route_01HYX3MPK5XJQJG0NB0PRSDVWC"
-)
-print(response.json())
-# {"id": "route_01HYX3MPK5XJQJG0NB0PRSDVWC", "object": "route", "deleted": true}
-```
-</CodeGroup>
