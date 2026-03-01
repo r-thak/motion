@@ -252,23 +252,31 @@
   async function googleRouteVehicleSDK(stops, vehicleType) {
     let path = null;
 
-    if (window.google && window.google.maps) {
-      try {
-        const { Route } = await google.maps.importLibrary('routes');
-        const origin = stops[0], dest = stops[stops.length - 1];
-        const intermediates = stops.slice(1, -1);
-        const result = await Route.computeRoutes({
-          origin, destination: dest, intermediates,
-          travelMode: 'DRIVING',
-          fields: ['path', 'distanceMeters', 'durationMillis'],
-        });
-        if (result.routes && result.routes[0] && result.routes[0].path) {
-          path = result.routes[0].path.map(p => ({
-            lat: typeof p.lat === 'function' ? p.lat() : p.lat,
-            lng: typeof p.lng === 'function' ? p.lng() : p.lng,
-          }));
-        }
-      } catch (e) { console.warn('Google SDK route failed:', e); }
+    try {
+      const formatPoint = (pt) => ({
+        location: { latLng: { latitude: pt.lat, longitude: pt.lng } }
+      });
+      const requestBody = {
+        origin: formatPoint(stops[0]),
+        destination: formatPoint(stops[stops.length - 1]),
+        travelMode: 'DRIVING'
+      };
+      const intermediates = stops.slice(1, -1);
+      if (intermediates.length) {
+        requestBody.intermediates = intermediates.map(formatPoint);
+      }
+
+      const r = await fetch(`${MOTION_API}/proxy/google/directions/v2:computeRoutes`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody)
+      });
+      const result = await r.json();
+      if (result.routes && result.routes[0] && result.routes[0].polyline && result.routes[0].polyline.encodedPolyline) {
+        path = decodePoly(result.routes[0].polyline.encodedPolyline);
+      }
+    } catch (e) {
+      console.warn('Google route proxy failed:', e);
     }
 
     // Fallback: straight-line between stops
@@ -420,7 +428,6 @@
     if (!running) return;
     const pool = window.FIXED_WAYPOINTS_SF;
     if (!pool || !pool.length) { setStatus('No waypoints loaded.'); return; }
-    const apiKey = (document.getElementById('api-key') || {}).value || '';
 
     cycleCount++;
     document.getElementById('cycle').textContent = 'Cycle ' + cycleCount;
@@ -479,15 +486,8 @@
   function setStatus(msg) { document.getElementById('status').textContent = msg; }
 
   /* ─── Load Google Maps SDK ─── */
-  function loadGoogleMaps(apiKey) {
-    return new Promise((resolve, reject) => {
-      if (window.google && window.google.maps) { resolve(); return; }
-      window.__motionMapsCallback = () => { window.__motionMapsCallback = null; resolve(); };
-      const s = document.createElement('script');
-      s.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}&callback=__motionMapsCallback&v=beta`;
-      s.async = true; s.onerror = () => reject(new Error('Failed to load Google Maps'));
-      document.head.appendChild(s);
-    });
+  function loadGoogleMaps() {
+    return Promise.resolve();
   }
 
   /* ─── Init ─── */
@@ -520,16 +520,9 @@
     }
 
     const wpCount = (window.FIXED_WAYPOINTS_SF || []).length;
-    setStatus(`✅ Motion API online • ${wpCount} waypoints • Enter Google key (optional) • Click Start`);
+    setStatus(`✅ Motion API online • ${wpCount} waypoints • Click Start`);
 
     document.getElementById('btn-start').addEventListener('click', async () => {
-      const apiKey = (document.getElementById('api-key') || {}).value || '';
-      try { localStorage.setItem('motion_google_api_key', apiKey); } catch (_) { }
-
-      if (apiKey) {
-        setStatus('Loading Google Maps SDK…');
-        try { await loadGoogleMaps(apiKey); } catch (e) { console.warn('Google Maps load failed:', e); }
-      }
 
       running = true;
       document.getElementById('btn-start').disabled = true;

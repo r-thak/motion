@@ -12,7 +12,8 @@ class Settings(BaseSettings):
     async_timeout_seconds: float = 3.0  # fast-path threshold for hybrid sync/async
     webhook_retry_attempts: int = 3
     webhook_timeout_seconds: float = 5.0
-    model_config = {"env_prefix": "", "case_sensitive": False}
+    google_api_key: str = ""
+    model_config = {"env_prefix": "", "case_sensitive": False, "env_file": ".env"}
 
 
 settings = Settings()
