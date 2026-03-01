@@ -1,4 +1,4 @@
-# Motion Freight Router API — Quick Reference
+# Motion Freight Router API - Quick Reference
 
 > **Drop-in replacement for the Google Routes API**, enriched with segment-level physics data for heavy freight: fuel burn, road grade, curvature, driver stress, and zone-aware routing.
 
@@ -53,11 +53,11 @@ cd api && python dev_server.py
 
 ## 🔧 curl Examples (Every Endpoint)
 
-> **One-liner format** — works on Linux, macOS, and Windows. For readable versions, see the JSON blocks below each command.
+> **One-liner format** - works on Linux, macOS, and Windows. For readable versions, see the JSON blocks below each command.
 
 ---
 
-### `GET /health` — Health Check
+### `GET /health` - Health Check
 
 ```bash
 curl http://localhost:8000/health
@@ -70,7 +70,7 @@ Expected response:
 
 ---
 
-### `POST /directions/v2:computeRoutes` — Compute Routes (Google-compatible)
+### `POST /directions/v2:computeRoutes` - Compute Routes (Google-compatible)
 
 **Minimal request** (defaults to SEMI_TRAILER, balanced profile):
 
@@ -78,7 +78,7 @@ Expected response:
 curl -X POST http://localhost:8000/directions/v2:computeRoutes -H "Content-Type: application/json" -d "{\"origin\":{\"location\":{\"latLng\":{\"latitude\":37.7749,\"longitude\":-122.4194}}},\"destination\":{\"location\":{\"latLng\":{\"latitude\":37.7694,\"longitude\":-122.4862}}}}"
 ```
 
-**Full request** — Semi Trailer, fuel-optimal:
+**Full request** - Semi Trailer, fuel-optimal:
 
 ```bash
 curl -X POST http://localhost:8000/directions/v2:computeRoutes -H "Content-Type: application/json" -d "{\"origin\":{\"location\":{\"latLng\":{\"latitude\":37.7749,\"longitude\":-122.4194}}},\"destination\":{\"location\":{\"latLng\":{\"latitude\":37.7694,\"longitude\":-122.4862}}},\"vehicleSpec\":{\"type\":\"SEMI_TRAILER\",\"grossWeightKg\":36000},\"routingProfile\":\"fuel_optimal\"}"
@@ -152,7 +152,7 @@ Example response (abbreviated):
 
 ---
 
-### `POST /v1/routes` — Create Route (Stripe-style)
+### `POST /v1/routes` - Create Route (Stripe-style)
 
 ```bash
 curl -X POST http://localhost:8000/v1/routes -H "Content-Type: application/json" -d "{\"origin\":{\"location\":{\"latLng\":{\"latitude\":37.7749,\"longitude\":-122.4194}}},\"destination\":{\"location\":{\"latLng\":{\"latitude\":37.7694,\"longitude\":-122.4862}}},\"vehicleSpec\":{\"type\":\"SEMI_TRAILER\"}}"
@@ -178,7 +178,7 @@ Example response:
 
 ---
 
-### `GET /v1/routes/{route_id}` — Retrieve Route
+### `GET /v1/routes/{route_id}` - Retrieve Route
 
 ```bash
 curl http://localhost:8000/v1/routes/ROUTE_ID_HERE
@@ -186,7 +186,7 @@ curl http://localhost:8000/v1/routes/ROUTE_ID_HERE
 
 ---
 
-### `DELETE /v1/routes/{route_id}` — Delete Route
+### `DELETE /v1/routes/{route_id}` - Delete Route
 
 ```bash
 curl -X DELETE http://localhost:8000/v1/routes/ROUTE_ID_HERE
@@ -203,7 +203,7 @@ Example response:
 
 ---
 
-### `GET /v1/routes/{route_id}/telemetry` — Get Telemetry
+### `GET /v1/routes/{route_id}/telemetry` - Get Telemetry
 
 **Default (first 50 segments):**
 

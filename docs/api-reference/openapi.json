@@ -170,19 +170,110 @@
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
                 },
-                "example": {
-                  "error": {
-                    "type": "invalid_request_error",
-                    "code": "unsupported_waypoint_type",
-                    "message": "Address and placeId waypoints are not supported; use latLng coordinates.",
-                    "param": "origin"
+                "examples": {
+                  "unsupported_waypoint": {
+                    "summary": "Unsupported waypoint type",
+                    "value": {
+                      "error": {
+                        "type": "invalid_request_error",
+                        "code": "unsupported_waypoint_type",
+                        "message": "Address and placeId waypoints are not supported; use latLng coordinates.",
+                        "param": "origin",
+                        "doc_url": null
+                      }
+                    }
+                  },
+                  "missing_location": {
+                    "summary": "Missing location",
+                    "value": {
+                      "error": {
+                        "type": "invalid_request_error",
+                        "code": "missing_location",
+                        "message": "Waypoint origin must have a location with latLng coordinates.",
+                        "param": "origin",
+                        "doc_url": null
+                      }
+                    }
                   }
                 }
               }
             }
           },
           "422": {
-            "description": "Routing failed (e.g. no route found)",
+            "description": "Routing engine could not compute a route",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "no_route_found": {
+                    "summary": "No route found",
+                    "value": {
+                      "error": {
+                        "type": "routing_error",
+                        "code": "no_route_found",
+                        "message": "No route could be found between the specified locations.",
+                        "param": null,
+                        "doc_url": null
+                      }
+                    }
+                  },
+                  "invalid_location": {
+                    "summary": "Invalid location",
+                    "value": {
+                      "error": {
+                        "type": "routing_error",
+                        "code": "invalid_location",
+                        "message": "One or more locations could not be mapped to the road network.",
+                        "param": null,
+                        "doc_url": null
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded (60 requests per minute per IP)",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "description": "Maximum requests per window",
+                "schema": { "type": "integer", "example": 60 }
+              },
+              "X-RateLimit-Remaining": {
+                "description": "Requests remaining",
+                "schema": { "type": "integer", "example": 0 }
+              },
+              "X-RateLimit-Reset": {
+                "description": "Unix timestamp when window resets",
+                "schema": { "type": "integer" }
+              },
+              "Retry-After": {
+                "description": "Seconds to wait",
+                "schema": { "type": "integer", "example": 60 }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": {
+                    "type": "rate_limit_error",
+                    "code": "rate_limit_exceeded",
+                    "message": "Rate limit exceeded. Maximum 60 requests per minute.",
+                    "param": null,
+                    "doc_url": null
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Routing engine unavailable (connection error or timeout)",
             "content": {
               "application/json": {
                 "schema": {
@@ -191,19 +282,11 @@
                 "example": {
                   "error": {
                     "type": "routing_error",
-                    "code": "no_route_found",
-                    "message": "No route could be found between the given locations."
+                    "code": "routing_engine_unavailable",
+                    "message": "Routing engine is unavailable. Please try again later.",
+                    "param": null,
+                    "doc_url": null
                   }
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "Rate limit exceeded",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -333,17 +416,43 @@
             }
           },
           "400": {
-            "description": "Invalid request",
+            "description": "Invalid request (e.g. unsupported waypoint type, missing location)",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "unsupported_waypoint": {
+                    "summary": "Unsupported waypoint type",
+                    "value": {
+                      "error": {
+                        "type": "invalid_request_error",
+                        "code": "unsupported_waypoint_type",
+                        "message": "Address and placeId waypoints are not supported; use latLng coordinates.",
+                        "param": "origin",
+                        "doc_url": null
+                      }
+                    }
+                  },
+                  "missing_location": {
+                    "summary": "Missing location",
+                    "value": {
+                      "error": {
+                        "type": "invalid_request_error",
+                        "code": "missing_location",
+                        "message": "Waypoint origin must have a location with latLng coordinates.",
+                        "param": "origin",
+                        "doc_url": null
+                      }
+                    }
+                  }
                 }
               }
             }
           },
           "409": {
-            "description": "Idempotency key lock contention. Retry after the specified delay.",
+            "description": "Idempotency key lock contention. Another request with the same key is already in progress.",
             "headers": {
               "Retry-After": {
                 "description": "Seconds to wait before retrying",
@@ -357,6 +466,15 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": {
+                    "type": "invalid_request_error",
+                    "code": "idempotency_key_in_progress",
+                    "message": "A request with this idempotency key is already in progress.",
+                    "param": null,
+                    "doc_url": null
+                  }
                 }
               }
             }
@@ -367,16 +485,88 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "idempotency_reuse": {
+                    "summary": "Idempotency key reused with different body",
+                    "value": {
+                      "error": {
+                        "type": "invalid_request_error",
+                        "code": "idempotency_key_reuse",
+                        "message": "Idempotency key has already been used with a different request body.",
+                        "param": null,
+                        "doc_url": null
+                      }
+                    }
+                  },
+                  "no_route_found": {
+                    "summary": "No route found",
+                    "value": {
+                      "error": {
+                        "type": "routing_error",
+                        "code": "no_route_found",
+                        "message": "No route could be found between the specified locations.",
+                        "param": null,
+                        "doc_url": null
+                      }
+                    }
+                  }
                 }
               }
             }
           },
           "429": {
-            "description": "Rate limit exceeded",
+            "description": "Rate limit exceeded (60 requests per minute per IP)",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "description": "Maximum requests per window",
+                "schema": { "type": "integer", "example": 60 }
+              },
+              "X-RateLimit-Remaining": {
+                "description": "Requests remaining",
+                "schema": { "type": "integer", "example": 0 }
+              },
+              "X-RateLimit-Reset": {
+                "description": "Unix timestamp when window resets",
+                "schema": { "type": "integer" }
+              },
+              "Retry-After": {
+                "description": "Seconds to wait",
+                "schema": { "type": "integer", "example": 60 }
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": {
+                    "type": "rate_limit_error",
+                    "code": "rate_limit_exceeded",
+                    "message": "Rate limit exceeded. Maximum 60 requests per minute.",
+                    "param": null,
+                    "doc_url": null
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Routing engine unavailable (connection error or timeout)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": {
+                    "type": "routing_error",
+                    "code": "routing_engine_unavailable",
+                    "message": "Routing engine is unavailable. Please try again later.",
+                    "param": null,
+                    "doc_url": null
+                  }
                 }
               }
             }
@@ -427,7 +617,8 @@
                     "type": "invalid_request_error",
                     "code": "route_not_found",
                     "message": "Route route_01HYX3MPK5XJQJG0NB0PRSDVWC not found.",
-                    "param": "route_id"
+                    "param": "route_id",
+                    "doc_url": null
                   }
                 }
               }
@@ -494,6 +685,15 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": {
+                    "type": "invalid_request_error",
+                    "code": "route_not_found",
+                    "message": "Route route_01HYX3MPK5XJQJG0NB0PRSDVWC not found.",
+                    "param": "route_id",
+                    "doc_url": null
+                  }
                 }
               }
             }
@@ -555,8 +755,27 @@
               }
             }
           },
+          "400": {
+            "description": "Route computation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": {
+                    "type": "routing_error",
+                    "code": "route_failed",
+                    "message": "Route computation failed.",
+                    "param": "route_id",
+                    "doc_url": null
+                  }
+                }
+              }
+            }
+          },
           "404": {
-            "description": "Route not found or still processing",
+            "description": "Route not found, still processing, or no telemetry available",
             "content": {
               "application/json": {
                 "schema": {
@@ -570,7 +789,8 @@
                         "type": "invalid_request_error",
                         "code": "route_not_found",
                         "message": "Route not found.",
-                        "param": "route_id"
+                        "param": "route_id",
+                        "doc_url": null
                       }
                     }
                   },
@@ -581,7 +801,20 @@
                         "type": "invalid_request_error",
                         "code": "route_processing",
                         "message": "Route is still processing. Poll GET /v1/routes/{route_id} until status is 'complete'.",
-                        "param": "route_id"
+                        "param": "route_id",
+                        "doc_url": null
+                      }
+                    }
+                  },
+                  "no_telemetry": {
+                    "summary": "No telemetry data available",
+                    "value": {
+                      "error": {
+                        "type": "invalid_request_error",
+                        "code": "no_telemetry",
+                        "message": "No telemetry data available for this route.",
+                        "param": null,
+                        "doc_url": null
                       }
                     }
                   }
@@ -1273,7 +1506,7 @@
               "complete",
               "failed"
             ],
-            "description": "Current status of the route computation.\n\n- `processing` — route is still being computed (routes array is empty)\n- `complete` — route computation finished (routes array is populated)\n- `failed` — route computation failed (error object is populated)"
+            "description": "Current status of the route computation.\n\n- `processing` - route is still being computed (routes array is empty)\n- `complete` - route computation finished (routes array is populated)\n- `failed` - route computation failed (error object is populated)"
           },
           "createdAt": {
             "type": "string",
