@@ -38,8 +38,8 @@ Include a `webhookUrl` when creating a route via `POST /v1/routes` to receive an
     "routeId": "route_01HYX3MPK5XJQJG0NB0PRSDVWC",
     "status": "failed",
     "error": {
-      "code": "no_route_found",
-      "message": "No route could be found between the given locations."
+      "code": "computation_failed",
+      "message": "No route could be found between the specified locations."
     }
   }
 }
@@ -47,7 +47,7 @@ Include a `webhookUrl` when creating a route via `POST /v1/routes` to receive an
 
 ## Retries
 
-Failed deliveries are retried up to 3 times with exponential backoff (1s, 2s, 4s). Each attempt has a 5-second timeout.
+Failed deliveries are retried up to 2 times with exponential backoff (1s, 2s), for a maximum of 3 total attempts. Each attempt has a 5-second timeout.
 
 ## Receiving Webhooks
 
