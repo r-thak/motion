@@ -1,94 +1,118 @@
 ---
-title: 'Development'
-description: 'Preview changes locally to update your docs'
+title: 'Tech Stack & Development'
+description: 'Architecture, tech stack, and local development setup'
 ---
 
-<Info>
-  **Prerequisites**:
-  - Node.js version 19 or higher
-  - A docs repository with a `docs.json` file
-</Info>
+## Architecture
 
-Follow these steps to install and run Mintlify on your operating system.
+Motion is a freight routing API built for hackathon speed and production-grade design. It wraps the open-source [Valhalla](https://github.com/valhalla/valhalla) routing engine and layers on physics-based enrichment computed from real USGS elevation data and road geometry.
 
-<Steps>
-<Step title="Install the Mintlify CLI">
+```mermaid
+flowchart TD
+    C[Client] --> G[Google-Compat Endpoint]
+    C --> R[RESTful Routes]
+    C --> T[Telemetry Endpoint]
 
-```bash
-npm i -g mint
-```
-</Step>
+    G --> V[Valhalla Router]
+    R --> V
+    G --> E[Enrichment Pipeline]
+    R --> E
 
-<Step title="Preview locally">
+    E -->|elevation| U[USGS EPQS]
+    E -->|zones| Z[Zone Index]
+    E -->|physics| P[Physics Engine]
 
-Navigate to your docs directory where your `docs.json` file is located, and run the following command:
+    R --> PG[(PostgreSQL)]
+    R --> RD[(Redis Cache)]
+    R --> W[Webhook Delivery]
+    R -->|timeout| WK[Background Worker]
 
-```bash
-mint dev
-```
+    G --> PG
+    G --> RD
 
-A local preview of your documentation will be available at `http://localhost:3000`.
+    T --> PG
+    T --> RD
 
-</Step>
-</Steps>
+    U --> RD
 
-## Custom ports
-
-By default, Mintlify uses port 3000. You can customize the port Mintlify runs on by using the `--port` flag. For example, to run Mintlify on port 3333, use this command:
-
-```bash
-mint dev --port 3333
-```
-
-If you attempt to run Mintlify on a port that's already in use, it will use the next available port:
-
-```md
-Port 3000 is already in use. Trying 3001 instead.
+    WK --> V
+    WK --> E
+    WK --> PG
+    WK --> RD
+    WK --> W
 ```
 
-## Mintlify versions
+## Tech Stack
 
-Please note that each CLI release is associated with a specific version of Mintlify. If your local preview does not align with the production version, please update the CLI:
+| Layer | Technology | Purpose |
+|-------|-----------|---------|
+| **Framework** | [FastAPI](https://fastapi.tiangolo.com/) | Async Python web framework with automatic OpenAPI generation |
+| **Routing Engine** | [Valhalla](https://github.com/valhalla/valhalla) | Open-source turn-by-turn routing with truck costing model |
+| **Database** | [PostgreSQL](https://www.postgresql.org/) + [asyncpg](https://github.com/MagicStack/asyncpg) | Route persistence, events, zone polygons |
+| **Cache** | [Redis](https://redis.io/) | Request deduplication, route caching, idempotency keys |
+| **Elevation** | [USGS EPQS](https://epqs.nationalmap.gov/) | Real elevation data for grade computation |
+| **Migrations** | [Alembic](https://alembic.sqlalchemy.org/) | Database schema migrations |
+| **Validation** | [Pydantic v2](https://docs.pydantic.dev/) | Request/response schema validation |
+| **Containerization** | [Docker Compose](https://docs.docker.com/compose/) | One-command setup for all services |
 
-```bash
-npm mint update
-```
-
-## Validating links
-
-The CLI can assist with validating links in your documentation. To identify any broken links, use the following command:
-
-```bash
-mint broken-links
-```
-
-## Deployment
-
-If the deployment is successful, you should see the following:
-
-<Frame>
-  <img src="/images/checks-passed.png" alt="Screenshot of a deployment confirmation message that says All checks have passed." style={{ borderRadius: '0.5rem' }} />
-</Frame>
-
-## Code formatting
-
-We suggest using extensions on your IDE to recognize and format MDX. If you're a VSCode user, consider the [MDX VSCode extension](https://marketplace.visualstudio.com/items?itemName=unifiedjs.vscode-mdx) for syntax highlighting, and [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode) for code formatting.
-
-## Troubleshooting
+## Key Design Decisions
 
 <AccordionGroup>
-  <Accordion title='Error: Could not load the "sharp" module using the darwin-arm64 runtime'>
-
-    This may be due to an outdated version of node. Try the following:
-    1. Remove the currently-installed version of the CLI: `npm remove -g mint`
-    2. Upgrade to Node v19 or higher.
-    3. Reinstall the CLI: `npm i -g mint`
+  <Accordion title="Why two API styles?" icon="code-branch">
+    **Google-compatible** (`/directions/v2:computeRoutes`) lets teams migrate from Google Routes API by changing only the base URL. **RESTful routes** (`/v1/routes`) adds statefulness, async processing, and webhooks for production use cases. Both hit the same enrichment pipeline.
   </Accordion>
-
-  <Accordion title="Issue: Encountering an unknown error">
-  
-    Solution: Go to the root of your device and delete the `~/.mintlify` folder. Then run `mint dev` again.
+  <Accordion title="Why this resource design?" icon="cube">
+    We adopted industry best practices: ULID-prefixed IDs (`route_`), an `object` field on every resource, idempotency keys, consistent error envelopes, and a processing/complete/failed state machine.
+  </Accordion>
+  <Accordion title="Why physics enrichment?" icon="flask">
+    Google Routes API tells you distance and duration — but not road grade, curvature, or fuel consumption. For a 36-ton semi on a 6% grade, fuel burn can be 3× higher than flat road. Motion fills that gap using real elevation models and road-load physics equations.
+  </Accordion>
+  <Accordion title="Why cursor-based pagination?" icon="arrow-right">
+    Telemetry segments can number in the hundreds. We use cursor-based pagination with `hasMore`/`nextCursor` for predictable performance. Offset pagination would be fragile for large segment lists.
   </Accordion>
 </AccordionGroup>
 
-Curious about what changed in the latest CLI version? Check out the [CLI changelog](https://www.npmjs.com/package/mintlify?activeTab=versions).
+## Local Development
+
+<Info>
+  **Prerequisites**: Docker and Docker Compose installed.
+</Info>
+
+<Steps>
+<Step title="Clone and start">
+
+```bash
+git clone https://github.com/r-thak/motion.git
+cd motion
+docker compose up -d
+```
+
+This starts PostgreSQL, Redis, Valhalla, and the Motion API on port 8000.
+</Step>
+
+<Step title="Verify">
+
+```bash
+curl http://localhost:8000/health
+# {"status": "ok"}
+```
+</Step>
+
+<Step title="Run without Docker (optional)">
+
+```bash
+cd api
+pip install -e .
+python dev_server.py --real
+```
+
+Requires PostgreSQL and Redis running separately.
+</Step>
+</Steps>
+
+## Running Tests
+
+```bash
+cd api
+python test_runner.py
+```
