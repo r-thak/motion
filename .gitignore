@@ -42,3 +42,4 @@ valhalla_data/
 # OS/System
 .DS_Store
 Thumbs.db
+api/.env
