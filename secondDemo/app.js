@@ -1,4 +1,4 @@
-const API_BASE = "http://localhost:8000";
+const API_BASE = "https://mgen.rthak.com";
 
 let map;
 let originMarker, destMarker;
@@ -63,27 +63,43 @@ function setApiMode(mode) {
     }
 }
 
-function logRequest(endpoint, reqBody) {
+function logRequest(endpointStr, reqBody) {
+    const parts = endpointStr.split(' ');
+    const method = parts[0];
+    const path = parts.slice(1).join(' ');
+
     const el = document.getElementById('log-container');
+
+    // Generator logic: produce a workable cURL command
+    const targetUrl = `https://mgen.rthak.com${path}`;
+    let curlCmd = `curl -X ${method} ${targetUrl}`;
+    if (reqBody) {
+        curlCmd += ` \\\n  -H "Content-Type: application/json" \\\n  -d '${JSON.stringify(reqBody, null, 2)}'`;
+    }
+
+    const curlId = 'curl-' + Date.now() + Math.floor(Math.random() * 1000);
+
     el.innerHTML = `
-        <div class="log-entry">
-            <span class="endpoint">REQ: ${endpoint}</span>
-            <pre>${JSON.stringify(reqBody, null, 2)}</pre>
+        <div class="log-entry generator-entry" style="border-left: 2px solid var(--accent); margin-bottom: 12px; position: relative;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span class="endpoint" style="margin-bottom: 0;">${method} ${path}</span>
+                <button class="secondary-btn" style="width: auto; margin-bottom: 0; padding: 4px 8px; font-size: 11px; z-index: 10;" onclick="copyToClipboard('${curlId}', this)">Copy cURL</button>
+            </div>
+            <pre id="${curlId}" style="white-space: pre-wrap; word-break: break-all; color: #a5d6ff; margin: 0; background: rgba(0,0,0,0.3); padding: 8px; border-radius: 4px;">${curlCmd}</pre>
         </div>` + el.innerHTML;
 }
 
+function copyToClipboard(id, btn) {
+    const text = document.getElementById(id).innerText;
+    navigator.clipboard.writeText(text).then(() => {
+        const originalText = btn.innerText;
+        btn.innerText = 'Copied!';
+        setTimeout(() => { btn.innerText = originalText; }, 2000);
+    });
+}
+
 function logResponse(endpoint, resBody) {
-    const el = document.getElementById('log-container');
-    const displayRes = { ...resBody };
-    // Truncate long polylines for readability
-    if (displayRes.routes && displayRes.routes[0] && displayRes.routes[0].polyline) {
-        displayRes.routes[0].polyline.encodedPolyline = "[ENCODED_POLYLINE_TRUNCATED]";
-    }
-    el.innerHTML = `
-        <div class="log-entry" style="border-left: 2px solid #10b981;">
-            <span class="endpoint">RES: ${endpoint}</span>
-            <pre>${JSON.stringify(displayRes, null, 2)}</pre>
-        </div>` + el.innerHTML;
+    // Disabled intentionally: this is now a request generator, not a logger.
 }
 
 async function computeRoute() {

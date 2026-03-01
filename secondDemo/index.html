@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Motion API Explorer</title>
+    <link rel="icon" type="image/x-icon" href="IMAGE.ico" />
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- Leaflet CSS -->
@@ -101,9 +102,10 @@
         </div>
     </div>
 
-    <!-- API Request/Response Log Drawer -->
+    <!-- API Request Generator Drawer -->
     <div class="glass-panel drawer right-drawer" id="api-log-drawer">
-        <h3>API Request Log</h3>
+        <h3>API Request Generator</h3>
+        <p style="font-size: 12px; color: var(--muted); margin-bottom: 10px;">Copy ready-to-use cURL commands.</p>
         <div id="log-container"></div>
     </div>
 
@@ -113,7 +115,7 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <!-- Polyline encoding -->
     <script src="https://edwardfox.github.io/leaflet-polyline/polyline.js"></script>
-    <script src="app.js"></script>
+    <script src="app.js?v=v2"></script>
 </body>
 
 </html>
