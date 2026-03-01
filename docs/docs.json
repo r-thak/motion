@@ -71,8 +71,8 @@
   "navbar": {
     "links": [
       {
-        "label": "Support",
-        "href": "mailto:hi@mintlify.com"
+        "label": "Made with ❤️ for HackIllinois2026",
+        "href": "https://hackillinois.org/"
       }
     ],
     "primary": {
