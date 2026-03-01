@@ -1,18 +1,20 @@
 ---
-title: 'API Reference'
-description: 'Motion Freight Router API — truck routing with physics-based enrichment'
+title: 'Introduction'
+description: 'Motion Freight Router API - truck routing with physics-based enrichment'
 ---
 
 ## Overview
 
-Motion computes optimized truck routes enriched with segment-level physics data — grade, curvature, fuel consumption, and zone awareness. It exposes two interfaces to the same routing engine:
+Motion is a **drop-in replacement for the [Google Routes API](https://developers.google.com/maps/documentation/routes/compute_route_directions)** that adds segment-level physics enrichment for heavy freight. Every route step includes grade, curvature, fuel burn, zone awareness, and road classification - computed from real USGS elevation data and road geometry.
+
+It exposes two interfaces to the same routing engine:
 
 <CardGroup cols={2}>
   <Card title="Google-Compatible" icon="arrows-rotate" href="/endpoint/google-compute-routes">
-    Drop-in replacement for Google Routes API. Same request and response format — change only the base URL.
+    Drop-in replacement for Google Routes API. Same request and response format - change only the base URL.
   </Card>
   <Card title="Route Resources" icon="route" href="/endpoint/create-route">
-    Create, retrieve, and manage route resources with async support, webhooks, and telemetry.
+    Stateful routes with async processing, webhooks, idempotency, and telemetry.
   </Card>
 </CardGroup>
 

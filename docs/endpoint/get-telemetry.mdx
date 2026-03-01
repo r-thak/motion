@@ -2,3 +2,5 @@
 title: 'Get Route Telemetry'
 openapi: 'GET /v1/routes/{route_id}/telemetry'
 ---
+
+<Note>Telemetry is only available for routes with `status: "complete"`. Requesting telemetry for a `processing` route returns a `404` with a helpful error message.</Note>

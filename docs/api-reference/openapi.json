@@ -387,7 +387,7 @@
     "/v1/routes/{route_id}": {
       "get": {
         "summary": "Get Route",
-        "description": "Retrieve a route resource by its ID. Completed routes expire after 6 hours.",
+        "description": "Retrieve a route resource by its ID.",
         "operationId": "getRoute",
         "tags": [
           "Routes"
@@ -1226,7 +1226,7 @@
       },
       "GoogleComputeRoutesResponse": {
         "type": "object",
-        "description": "",
+        "description": "Response from the Google-compatible computeRoutes endpoint. Returns one or more routes in the same format as the Google Routes API, enriched with segment-level physics data (grade, curvature, fuel burn, zone flags).",
         "properties": {
           "routes": {
             "type": "array",

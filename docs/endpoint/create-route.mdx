@@ -2,3 +2,11 @@
 title: 'Create Route'
 openapi: 'POST /v1/routes'
 ---
+
+<Info>
+  This is the **hybrid sync/async** route creation endpoint. It uses below pattern:
+  - **Fast path** (< 3s): Returns `200` with the completed route inline.
+  - **Slow path** (> 3s): Returns `202` with `status: "processing"`. Poll `GET /v1/routes/{id}` or use a `webhookUrl` to be notified when it completes.
+</Info>
+
+<Tip>The `Idempotency-Key` header makes retries safe — if your client times out, just resend with the same key to get the cached response instead of creating a duplicate.</Tip>
