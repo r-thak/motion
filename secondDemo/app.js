@@ -1,4 +1,4 @@
-const API_BASE = "http://localhost:8000";
+const API_BASE = "https://mgen.rthak.com";
 
 let map;
 let originMarker, destMarker;
@@ -71,7 +71,8 @@ function logRequest(endpointStr, reqBody) {
     const el = document.getElementById('log-container');
 
     // Generator logic: produce a workable cURL command
-    let curlCmd = `curl -X ${method} ${API_BASE}${path}`;
+    const targetUrl = `https://mgen.rthak.com${path}`;
+    let curlCmd = `curl -X ${method} ${targetUrl}`;
     if (reqBody) {
         curlCmd += ` \\\n  -H "Content-Type: application/json" \\\n  -d '${JSON.stringify(reqBody, null, 2)}'`;
     }
