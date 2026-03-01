@@ -9,4 +9,4 @@ openapi: 'POST /v1/routes'
   - **Slow path** (> 3s): Returns `202` with `status: "processing"`. Poll `GET /v1/routes/{id}` or use a `webhookUrl` to be notified when it completes.
 </Info>
 
-<Tip>The `Idempotency-Key` header makes retries safe — if your client times out, just resend with the same key to get the cached response instead of creating a duplicate.</Tip>
+<Tip>The `Idempotency-Key` header makes retries safe - if your client times out, just resend with the same key to get the cached response instead of creating a duplicate.</Tip>

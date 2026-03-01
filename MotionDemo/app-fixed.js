@@ -1,5 +1,5 @@
 /**
- * Motion Route Demo — "Our Model" vs Google Maps
+ * Motion Route Demo - "Our Model" vs Google Maps
  *
  * LEFT:  Motion Freight Router API (Valhalla truck routing + physics)
  * RIGHT: Google Maps (standard car routing)
@@ -32,7 +32,7 @@
   const GOOGLE_COLOR = '#f97316';
   const VEHICLE_COLORS = ['#38bdf8', '#22d3ee', '#818cf8', '#a78bfa'];
 
-  /* Physics constants — same model applied to BOTH sides */
+  /* Physics constants - same model applied to BOTH sides */
   const VEHICLE_WEIGHTS = { SEMI_TRAILER: 36000, BOX_TRUCK: 12000 };
   const GRADE_PENALTY = 0.0025;  // extra L per meter elevation gain per tonne
   const TURN_PENALTY_L = 0.002;  // extra L per degree of sharp turn per km

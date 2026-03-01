@@ -65,7 +65,7 @@ flowchart TD
     We adopted industry best practices: ULID-prefixed IDs (`route_`), an `object` field on every resource, idempotency keys, consistent error envelopes, and a processing/complete/failed state machine.
   </Accordion>
   <Accordion title="Why physics enrichment?" icon="flask">
-    Google Routes API tells you distance and duration — but not road grade, curvature, or fuel consumption. For a 36-ton semi on a 6% grade, fuel burn can be 3× higher than flat road. Motion fills that gap using real elevation models and road-load physics equations.
+    Google Routes API tells you distance and duration - but not road grade, curvature, or fuel consumption. For a 36-ton semi on a 6% grade, fuel burn can be 3× higher than flat road. Motion fills that gap using real elevation models and road-load physics equations.
   </Accordion>
   <Accordion title="Why cursor-based pagination?" icon="arrow-right">
     Telemetry segments can number in the hundreds. We use cursor-based pagination with `hasMore`/`nextCursor` for predictable performance. Offset pagination would be fragile for large segment lists.
