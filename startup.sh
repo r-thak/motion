@@ -44,7 +44,12 @@ if [ "$1" == "--local" ]; then
         echo "Redis is already running."
     fi
 
-    echo "[4/4] Starting Dev Server in Real Mode..."
+    echo "[4/4] Starting Demos and Dev Server..."
+    echo "Starting Demo 1 (MotionDemo) on port 8001..."
+    (cd MotionDemo && python3 -m http.server 8001 &)
+    echo "Starting Demo 2 (secondDemo) on port 8002..."
+    (cd secondDemo && python3 -m http.server 8002 &)
+
     cd api
     python dev_server.py --real
 
@@ -74,6 +79,11 @@ else
 
     echo ""
     echo "✅ Success! Containers are starting up."
+    echo ""
+    echo "Starting Demo 1 (MotionDemo) on port 8001..."
+    (cd MotionDemo && python3 -m http.server 8001 &)
+    echo "Starting Demo 2 (secondDemo) on port 8002..."
+    (cd secondDemo && python3 -m http.server 8002 &)
     echo ""
     echo "To monitor the Valhalla tile building progress, run:"
     echo "  docker compose logs -f valhalla"

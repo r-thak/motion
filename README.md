@@ -32,12 +32,12 @@ This demo simulates an entire fleet of vehicles navigating San Francisco. It com
    ```bash
    cd MotionDemo
    ```
-3. Start a simple HTTP server on port 3001:
+3. Start a simple HTTP server on port 8001:
    ```bash
-   python3 -m http.server 3001
+   python3 -m http.server 8001
    ```
 4. Open your browser and go to:
-   **[http://localhost:3001](http://localhost:3001)**
+   **[http://localhost:8001](http://localhost:8001)**
 5. Click **"Our Model vs Baseline"**. *(Optional: Provide a Google Maps API Key in the UI to see the live Google baseline comparison).*
 
 ---
@@ -56,12 +56,12 @@ This is a developer-focused, interactive UI. It allows you to:
    ```bash
    cd secondDemo
    ```
-3. Start a simple HTTP server on port 3002:
+3. Start a simple HTTP server on port 8002:
    ```bash
-   python3 -m http.server 3002
+   python3 -m http.server 8002
    ```
 4. Open your browser and go to:
-   **[http://localhost:3002](http://localhost:3002)**
+   **[http://localhost:8002](http://localhost:8002)**
 5. Open the right-side "API Request Log" drawer to watch the raw JSON requests and responses live as you use the application.
 
 ---

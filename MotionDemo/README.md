@@ -5,7 +5,7 @@ Split-screen demo comparing **our** fuel-efficient routing (slope + curvature + 
 ## Setup
 
 1. **Google Cloud**: Enable **Directions API** and **Geocoding API**, create an API key.
-2. Run a local server (e.g. `npx serve . -p 3456`) and open the app.
+2. Run a local server (e.g. `npx serve . -p 8001` or `python3 -m http.server 8001`) and open the app.
 3. Paste your **Google API key** in the sidebar; optionally set **Our route API URL**.
 4. Click **Start simulation**.
 
