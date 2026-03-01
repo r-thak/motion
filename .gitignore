@@ -21,11 +21,6 @@ wheels/
 .installed.cfg
 *.egg
 
-# Virtual Environments
-venv/
-.env
-.venv
-
 # Testing / Tooling
 .pytest_cache/
 .coverage
