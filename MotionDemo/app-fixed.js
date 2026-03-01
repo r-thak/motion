@@ -17,7 +17,7 @@
   'use strict';
 
   /* ─── Config ─── */
-  const MOTION_API = 'https://mgen.rthak.com';
+  const MOTION_API = 'https://motion.rthak.com';
   const USGS_BASE = 'https://epqs.nationalmap.gov/v1/json';
   const SF_CENTER = [37.7749, -122.4194];
   const NUM_VEHICLES = 4;

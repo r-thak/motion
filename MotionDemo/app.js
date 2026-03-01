@@ -32,7 +32,7 @@
 
   function getConfig() {
     return {
-      ourRouteApiBase: 'https://mgen.rthak.com/directions/v2/computeRoutes'
+      ourRouteApiBase: 'https://motion.rthak.com/directions/v2/computeRoutes'
     };
   }
 
@@ -66,7 +66,7 @@
       requestBody.intermediates = intermediates.map(formatPoint);
     }
 
-    return fetch('https://mgen.rthak.com/proxy/google/directions/v2/computeRoutes', {
+    return fetch('https://motion.rthak.com/proxy/google/directions/v2/computeRoutes', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(requestBody)
