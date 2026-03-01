@@ -91,8 +91,8 @@
                     }
                   }
                 },
-                "with_vehicle_and_driver": {
-                  "summary": "Route with vehicle spec and driver state",
+                "with_vehicle": {
+                  "summary": "Route with vehicle spec",
                   "value": {
                     "origin": {
                       "location": {
@@ -113,11 +113,6 @@
                     "vehicleSpec": {
                       "type": "SEMI_TRAILER",
                       "grossWeightKg": 36000
-                    },
-                    "driverState": {
-                      "fatigueScore": 0.5,
-                      "attentionScore": 0.8,
-                      "stressLevel": 0.3
                     },
                     "departureTime": "2026-03-01T14:00:00Z"
                   }
@@ -599,119 +594,6 @@
           }
         }
       }
-    },
-    "/v1/routes/{route_id}/driver-state": {
-      "patch": {
-        "summary": "Update Driver State",
-        "description": "Updates driver fatigue, attention, and stress parameters for a route, then re-computes all enrichment scores.",
-        "operationId": "updateDriverState",
-        "tags": [
-          "Driver State"
-        ],
-        "parameters": [
-          {
-            "name": "route_id",
-            "in": "path",
-            "required": true,
-            "description": "The unique route resource ID",
-            "schema": {
-              "type": "string",
-              "example": "route_01HYX3MPK5XJQJG0NB0PRSDVWC"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/DriverStateUpdate"
-              },
-              "example": {
-                "fatigueScore": 0.7,
-                "stressLevel": 0.4
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Driver state updated and enrichment re-scored",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "routeId": {
-                      "type": "string",
-                      "description": "The route ID",
-                      "example": "route_01HYX3MPK5XJQJG0NB0PRSDVWC"
-                    },
-                    "driverState": {
-                      "$ref": "#/components/schemas/DriverState"
-                    },
-                    "updatedAt": {
-                      "type": "string",
-                      "format": "date-time",
-                      "description": "ISO 8601 UTC timestamp of the update",
-                      "example": "2026-02-28T15:15:00Z"
-                    }
-                  },
-                  "required": [
-                    "routeId",
-                    "driverState",
-                    "updatedAt"
-                  ]
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Route is processing or failed",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                },
-                "examples": {
-                  "processing": {
-                    "summary": "Route still processing",
-                    "value": {
-                      "error": {
-                        "type": "invalid_request_error",
-                        "code": "route_processing",
-                        "message": "Cannot update driver state while route is processing.",
-                        "param": "route_id"
-                      }
-                    }
-                  },
-                  "failed": {
-                    "summary": "Route failed",
-                    "value": {
-                      "error": {
-                        "type": "invalid_request_error",
-                        "code": "route_failed",
-                        "message": "Cannot update driver state for a failed route.",
-                        "param": "route_id"
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Route not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
     }
   },
   "components": {
@@ -886,57 +768,6 @@
           }
         }
       },
-      "DriverState": {
-        "type": "object",
-        "description": "Driver state parameters that affect stress scoring and enrichment",
-        "properties": {
-          "fatigueScore": {
-            "type": "number",
-            "minimum": 0,
-            "maximum": 1,
-            "default": 0,
-            "description": "Driver fatigue level (0 = fully rested, 1 = maximum fatigue)"
-          },
-          "attentionScore": {
-            "type": "number",
-            "minimum": 0,
-            "maximum": 1,
-            "default": 1,
-            "description": "Driver attention level (0 = no attention, 1 = fully attentive)"
-          },
-          "stressLevel": {
-            "type": "number",
-            "minimum": 0,
-            "maximum": 1,
-            "default": 0,
-            "description": "Current driver stress level (0 = no stress, 1 = maximum stress)"
-          }
-        }
-      },
-      "DriverStateUpdate": {
-        "type": "object",
-        "description": "Partial update for driver state. Only provided fields are updated.",
-        "properties": {
-          "fatigueScore": {
-            "type": "number",
-            "minimum": 0,
-            "maximum": 1,
-            "description": "Updated fatigue score"
-          },
-          "attentionScore": {
-            "type": "number",
-            "minimum": 0,
-            "maximum": 1,
-            "description": "Updated attention score"
-          },
-          "stressLevel": {
-            "type": "number",
-            "minimum": 0,
-            "maximum": 1,
-            "description": "Updated stress level"
-          }
-        }
-      },
       "ComputeRoutesRequest": {
         "type": "object",
         "description": "Request body for route computation. Accepts all Google Routes API fields \u2014 unsupported fields are silently ignored.",
@@ -993,10 +824,6 @@
           "vehicleSpec": {
             "$ref": "#/components/schemas/VehicleSpec",
             "description": "Vehicle specification for physics enrichment. Defaults to SEMI_TRAILER preset if omitted."
-          },
-          "driverState": {
-            "$ref": "#/components/schemas/DriverState",
-            "description": "Current driver state for stress scoring. Defaults to fully rested if omitted."
           },
           "routingProfile": {
             "type": "string",
@@ -1099,12 +926,6 @@
             "nullable": true,
             "description": "Estimated fuel burn for this step in liters",
             "example": 0.42
-          },
-          "stressFactor": {
-            "type": "number",
-            "nullable": true,
-            "description": "Computed stress factor for this step (higher = more stressful)",
-            "example": 0.35
           },
           "zoneFlags": {
             "type": "array",
@@ -1553,11 +1374,6 @@
             "nullable": true,
             "description": "Estimated fuel burn in liters"
           },
-          "stressFactor": {
-            "type": "number",
-            "nullable": true,
-            "description": "Stress factor for this segment"
-          },
           "zoneFlags": {
             "type": "array",
             "items": {
@@ -1615,11 +1431,6 @@
             "type": "integer",
             "default": 0,
             "description": "Number of segments in residential areas"
-          },
-          "overallStressScore": {
-            "type": "number",
-            "nullable": true,
-            "description": "Overall stress score for the route (0-1)"
           }
         }
       },
@@ -1635,11 +1446,6 @@
             "type": "string",
             "format": "date-time",
             "description": "When telemetry was computed"
-          },
-          "driverState": {
-            "type": "object",
-            "nullable": true,
-            "description": "Driver state used for computation"
           },
           "vehicleSpec": {
             "type": "object",
@@ -1806,10 +1612,6 @@
     {
       "name": "Telemetry",
       "description": "Segment-level physics telemetry data (grade, curvature, fuel burn, stress)."
-    },
-    {
-      "name": "Driver State",
-      "description": "Update driver state and trigger enrichment re-scoring."
     },
     {
       "name": "Health",
