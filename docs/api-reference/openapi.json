@@ -282,9 +282,6 @@
                     "vehicleSpec": {
                       "type": "SEMI_TRAILER"
                     },
-                    "driverState": {
-                      "fatigueScore": 0.5
-                    },
                     "webhookUrl": "https://example.com/webhook"
                   }
                 }
@@ -507,7 +504,7 @@
     "/v1/routes/{route_id}/telemetry": {
       "get": {
         "summary": "Get Route Telemetry",
-        "description": "Returns paginated segment-level physics data (grade, curvature, fuel burn, stress) for a completed route.",
+        "description": "Returns paginated segment-level physics data (grade, curvature, fuel burn) for a completed route.",
         "operationId": "getRouteTelemetry",
         "tags": [
           "Telemetry"
@@ -1611,7 +1608,7 @@
     },
     {
       "name": "Telemetry",
-      "description": "Segment-level physics telemetry data (grade, curvature, fuel burn, stress)."
+      "description": "Segment-level physics telemetry data (grade, curvature, fuel burn)."
     },
     {
       "name": "Health",
