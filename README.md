@@ -1,5 +1,6 @@
 # Motion Freight Router & API Demos
 This repo contains the main Motion Routing API as well as two demos. To run all of these, run the startup.sh script (if you are on Windows, run startup.sh in WSL)  
+```./startup.sh```
   
 API URL: [http://localhost:8000](http://localhost:8000)  
 Visual:  [http://localhost:8001](http://localhost:8001)  
