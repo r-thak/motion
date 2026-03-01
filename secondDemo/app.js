@@ -58,10 +58,10 @@ function setApiMode(mode) {
     const asyncActions = document.getElementById('async-actions');
     if (mode === 'async') {
         asyncActions.classList.remove('hidden');
-        document.getElementById('compute-btn').innerText = "Create Route Job (Async)";
+        document.getElementById('compute-btn').innerText = "Generate Request";
     } else {
         asyncActions.classList.add('hidden');
-        document.getElementById('compute-btn').innerText = "Compute Route (Sync)";
+        document.getElementById('compute-btn').innerText = "Generate Request";
     }
 }
 
