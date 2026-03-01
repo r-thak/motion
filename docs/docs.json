@@ -40,12 +40,6 @@
             ]
           },
           {
-            "group": "Driver State",
-            "pages": [
-              "endpoint/update-driver-state"
-            ]
-          },
-          {
             "group": "Webhooks",
             "pages": [
               "endpoint/webhook"
