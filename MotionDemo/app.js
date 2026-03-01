@@ -7,7 +7,7 @@
   'use strict';
 
   const SF_CENTER = [37.7749, -122.4194];
-  const SF_BOUNDS = { north: 37.81, south: 37.70, west: -122.52, east: -122.35 };
+  const SF_BOUNDS = { north: 37.78, south: 37.712, west: -122.48, east: -122.39 };
   const NUM_VEHICLES = 4;
   const MAX_WAYPOINTS_PER_VEHICLE = 8;
   const WAYPOINTS_TOTAL = 20;
@@ -40,7 +40,7 @@
     try {
       localStorage.setItem('motion_google_api_key', apiKey);
       localStorage.setItem('motion_our_api_base', ourApiBase || '');
-    } catch (_) {}
+    } catch (_) { }
   }
 
   function loadSavedConfig() {
@@ -49,7 +49,7 @@
       const our = localStorage.getItem('motion_our_api_base') || '';
       document.getElementById('api-key').value = key;
       document.getElementById('our-api-url').value = our;
-    } catch (_) {}
+    } catch (_) { }
   }
 
   function cacheKey(lat, lng) {
@@ -686,13 +686,13 @@
 
           const ourDirectionsPromise = ourRouteApiBase
             ? fetchDirectionsRest(depotPoint, depotPoint, order, null, ourRouteApiBase)
-                .then((data) => {
-                  if (data && data.status === 'OK' && data.routes && data.routes[0]) {
-                    return { data, useResult: false };
-                  }
-                  return fetchDirectionsGoogle(depotPoint, depotPoint, order).then((result) => ({ result, useResult: true }));
-                })
-                .catch(() => fetchDirectionsGoogle(depotPoint, depotPoint, order).then((result) => ({ result, useResult: true })))
+              .then((data) => {
+                if (data && data.status === 'OK' && data.routes && data.routes[0]) {
+                  return { data, useResult: false };
+                }
+                return fetchDirectionsGoogle(depotPoint, depotPoint, order).then((result) => ({ result, useResult: true }));
+              })
+              .catch(() => fetchDirectionsGoogle(depotPoint, depotPoint, order).then((result) => ({ result, useResult: true })))
             : fetchDirectionsGoogle(depotPoint, depotPoint, order).then((result) => ({ result, useResult: true }));
 
           ourPromises.push(
@@ -750,7 +750,7 @@
       .then((data) => {
         if (Array.isArray(data) && data.length > 0) window.FIXED_WAYPOINTS_SF = data;
       })
-      .catch(() => {});
+      .catch(() => { });
 
     document.getElementById('btn-start').addEventListener('click', () => {
       const { apiKey, ourRouteApiBase } = getConfig();
