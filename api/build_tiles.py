@@ -28,7 +28,7 @@ BASE_DIR = Path(__file__).parent.parent  # workspace root
 DATA_DIR = BASE_DIR / "valhalla_data"
 TILE_DIR = DATA_DIR / "valhalla_tiles"
 CONFIG_FILE = DATA_DIR / "valhalla.json"
-PBF_FILE = DATA_DIR / "sf.osm.pbf"
+PBF_FILE = DATA_DIR / "norcal-latest.osm.pbf"
 
 # Find the bundled valhalla_build_tiles binary
 VALHALLA_PKG_DIR = Path(valhalla.__file__).parent
@@ -40,7 +40,7 @@ def main():
     if not PBF_FILE.exists():
         print(f"❌ OSM PBF file not found at {PBF_FILE}")
         print("   Download it with:")
-        print("   curl -L -o valhalla_data/sf.osm.pbf https://download.geofabrik.de/north-america/us/california/norcal-latest.osm.pbf")
+        print("   curl -L -o valhalla_data/norcal-latest.osm.pbf https://download.geofabrik.de/north-america/us/california/norcal-latest.osm.pbf")
         sys.exit(1)
 
     print(f"📦 OSM PBF: {PBF_FILE} ({PBF_FILE.stat().st_size / 1e6:.0f} MB)")

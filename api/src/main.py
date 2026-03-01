@@ -54,19 +54,24 @@ async def lifespan(app: FastAPI):
         logger.warning("Could not load zone polygons: %s", exc)
     app.state.zone_index = zone_index
 
-    # Run Alembic migrations programmatically
+    # Run Alembic migrations programmatically in a separate thread
     try:
         from alembic.config import Config
         from alembic import command
         import os
+        import asyncio
 
         alembic_cfg = Config()
-        # Find the migrations directory relative to this file
         base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         migrations_dir = os.path.join(base_dir, "migrations")
         alembic_cfg.set_main_option("script_location", migrations_dir)
-        alembic_cfg.set_main_option("sqlalchemy.url", settings.database_url.replace("postgresql://", "postgresql+asyncpg://"))
-        command.upgrade(alembic_cfg, "head")
+        
+        # Ensure sync URL for migrations (psycopg2)
+        sync_url = settings.database_url.replace("postgresql+asyncpg://", "postgresql://")
+        alembic_cfg.set_main_option("sqlalchemy.url", sync_url)
+        
+        # Run synchronous command in current event loop's worker thread
+        await asyncio.to_thread(command.upgrade, alembic_cfg, "head")
         logger.info("Alembic migrations applied")
     except Exception as exc:
         logger.warning("Could not run Alembic migrations (tables may already exist): %s", exc)

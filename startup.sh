@@ -19,9 +19,9 @@ if [ "$1" == "--local" ]; then
     echo "[2/4] Setting up Valhalla Grid for San Francisco / NorCal..."
     mkdir -p valhalla_data
 
-    if [ ! -f "valhalla_data/sf.osm.pbf" ]; then
+    if [ ! -f "valhalla_data/norcal-latest.osm.pbf" ]; then
         echo "Downloading San Francisco / NorCal OSM PBF data..."
-        curl -L -o valhalla_data/sf.osm.pbf https://download.geofabrik.de/north-america/us/california/norcal-latest.osm.pbf
+        curl -L -o valhalla_data/norcal-latest.osm.pbf https://download.geofabrik.de/north-america/us/california/norcal-latest.osm.pbf
     else
         echo "OSM PBF data already exists. Skipping download."
     fi
@@ -67,6 +67,9 @@ else
     echo "Note: The Valhalla container will automatically download OSM PBF data"
     echo "and build routing tiles on the first run (this may take 15-30 mins)."
     echo ""
+
+    # Ensure the mount point exists on the host with correct permissions
+    mkdir -p valhalla_data
 
     if docker compose version &> /dev/null; then
         docker compose up -d --build
