@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Motion API Explorer</title>
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div id="map"></div>
+
+    <div class="glass-panel sidebar left-sidebar">
+        <div class="header">
+            <h1> Motion API Explorer</h1>
+            <p>Test all endpoints & routing profiles</p>
+        </div>
+
+        <div class="control-group">
+            <label>API Mode</label>
+            <div class="toggle-group">
+                <button class="toggle-btn active" id="mode-sync" onclick="setApiMode('sync')">v2:computeRoutes
+                    (Sync)</button>
+                <button class="toggle-btn" id="mode-async" onclick="setApiMode('async')">/v1/routes (Async)</button>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <label>Routing Profile</label>
+            <select id="profile-select">
+                <option value="balanced">Balanced</option>
+                <option value="time_optimal">Time Optimal</option>
+                <option value="fuel_optimal">Fuel Optimal (Avoids hills & turns)</option>
+                <option value="fatigue_aware">Fatigue Aware</option>
+            </select>
+        </div>
+
+        <div class="control-group">
+            <label>Vehicle Configuration</label>
+            <select id="vehicle-type">
+                <option value="SEMI_TRAILER">Semi Trailer (36t)</option>
+                <option value="BOX_TRUCK">Box Truck (10t)</option>
+            </select>
+        </div>
+
+        <div class="control-group">
+            <label>Driver Fatigue Score: <span id="fatigue-val">0.2</span></label>
+            <input type="range" id="driver-fatigue" min="0" max="1" step="0.1" value="0.2"
+                oninput="document.getElementById('fatigue-val').innerText = this.value">
+        </div>
+
+        <div class="control-group">
+            <label>Waypoints (Click map to set)</label>
+            <div class="waypoint-display">
+                <div class="waypoint-row">
+                    <span class="dot origin-dot"></span>
+                    <span id="origin-coords">37.7956, -122.3937 (SF)</span>
+                </div>
+                <div class="waypoint-row">
+                    <span class="dot dest-dot"></span>
+                    <span id="dest-coords">37.7544, -122.4477 (Twin Peaks)</span>
+                </div>
+            </div>
+        </div>
+
+        <button class="primary-btn" id="compute-btn" onclick="computeRoute()">Compute Route</button>
+
+        <div class="metrics-card hidden" id="metrics-card">
+            <h3>Route Metrics</h3>
+            <div class="metric-grid">
+                <div class="metric">
+                    <span class="label">Distance</span>
+                    <span class="value" id="res-distance">--</span>
+                </div>
+                <div class="metric">
+                    <span class="label">Duration</span>
+                    <span class="value" id="res-duration">--</span>
+                </div>
+                <div class="metric">
+                    <span class="label">Fuel Burn</span>
+                    <span class="value" id="res-fuel">--</span>
+                </div>
+                <div class="metric">
+                    <span class="label">Elev Gain</span>
+                    <span class="value" id="res-elev">--</span>
+                </div>
+                <div class="metric">
+                    <span class="label">Stress</span>
+                    <span class="value" id="res-stress">--</span>
+                </div>
+                <div class="metric">
+                    <span class="label">Turns</span>
+                    <span class="value" id="res-turns">--</span>
+                </div>
+            </div>
+
+            <div id="async-actions" class="hidden"
+                style="margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
+                <p style="font-size: 12px; opacity: 0.7; margin-bottom: 8px;">Stripe-style API Actions:</p>
+                <button class="secondary-btn" id="btn-fetch-telemetry" onclick="fetchTelemetry()">Poll
+                    Telemetry</button>
+                <button class="secondary-btn action-btn-orange" id="btn-patch-driver"
+                    onclick="patchDriverState()">Update Driver State</button>
+                <button class="secondary-btn action-btn-red" id="btn-delete-route" onclick="deleteRoute()">Delete Route
+                    Job</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- API Request/Response Log Drawer -->
+    <div class="glass-panel drawer right-drawer" id="api-log-drawer">
+        <h3>API Request Log</h3>
+        <div id="log-container"></div>
+    </div>
+
+    <!-- Scripts -->
+    <!-- Turf.js for polylines/bounds if needed -->
+    <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Polyline encoding -->
+    <script src="https://edwardfox.github.io/leaflet-polyline/polyline.js"></script>
+    <script src="app.js"></script>
+</body>
+
+</html>
