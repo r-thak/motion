@@ -1,0 +1,97 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "mint",
+  "name": "Motion",
+  "colors": {
+    "primary": "#16A34A",
+    "light": "#07C983",
+    "dark": "#15803D"
+  },
+  "favicon": "/favicon.svg",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Docs",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": [
+              "index"
+            ]
+          },
+          {
+            "group": "Google-Compatible",
+            "pages": [
+              "endpoint/google-compute-routes"
+            ]
+          },
+          {
+            "group": "Routes",
+            "pages": [
+              "endpoint/create-route",
+              "endpoint/get-route",
+              "endpoint/delete-route"
+            ]
+          },
+          {
+            "group": "Telemetry",
+            "pages": [
+              "endpoint/get-telemetry"
+            ]
+          },
+          {
+            "group": "Webhooks",
+            "pages": [
+              "endpoint/webhook"
+            ]
+          },
+          {
+            "group": "Health",
+            "pages": [
+              "endpoint/health"
+            ]
+          }
+        ]
+      }
+    ],
+    "global": {
+      "anchors": []
+    }
+  },
+  "logo": {
+    "light": "/logo/light.svg",
+    "dark": "/logo/dark.svg"
+  },
+  "navbar": {
+    "links": [
+      {
+        "label": "Made with ❤️ for HackIllinois2026",
+        "href": "https://hackillinois.org/"
+      }
+    ],
+    "primary": {
+      "type": "button",
+      "label": "Github",
+      "href": "https://github.com/r-thak/motion"
+    }
+  },
+  "contextual": {
+    "options": [
+     "copy",
+     "view",
+     "chatgpt",
+     "claude",
+     "perplexity",
+     "mcp",
+     "cursor",
+     "vscode"
+   ]
+  },
+  "footer": {
+    "socials": {
+      "x": "https://x.com/mintlify",
+      "github": "https://github.com/mintlify",
+      "linkedin": "https://linkedin.com/company/mintlify"
+    }
+  }
+}

@@ -1,0 +1,1621 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Motion Freight Router API",
+    "description": "Drop-in replacement for Google Routes API with segment-level physics enrichment for heavy freight. Provides both a Google-compatible synchronous endpoint and stateful route management endpoints.",
+    "version": "1.0.0",
+    "license": {
+      "name": "MIT"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Local development"
+    }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Health Check",
+        "description": "Returns the health status of the API.",
+        "operationId": "healthCheck",
+        "tags": [
+          "Health"
+        ],
+        "responses": {
+          "200": {
+            "description": "API is healthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "ok"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/directions/v2:computeRoutes": {
+      "post": {
+        "summary": "Compute Routes (Google-compatible)",
+        "description": "Drop-in replacement for the Google Routes API. Returns the standard response with additional physics enrichment per step.",
+        "operationId": "googleComputeRoutes",
+        "tags": [
+          "Google-Compatible"
+        ],
+        "parameters": [
+          {
+            "name": "X-Goog-FieldMask",
+            "in": "header",
+            "required": false,
+            "description": "Accepted for Google compatibility but ignored. The full response is always returned.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ComputeRoutesRequest"
+              },
+              "examples": {
+                "simple": {
+                  "summary": "Simple A to B route",
+                  "value": {
+                    "origin": {
+                      "location": {
+                        "latLng": {
+                          "latitude": 41.878,
+                          "longitude": -87.636
+                        }
+                      }
+                    },
+                    "destination": {
+                      "location": {
+                        "latLng": {
+                          "latitude": 41.705,
+                          "longitude": -87.613
+                        }
+                      }
+                    }
+                  }
+                },
+                "with_vehicle": {
+                  "summary": "Route with vehicle spec",
+                  "value": {
+                    "origin": {
+                      "location": {
+                        "latLng": {
+                          "latitude": 41.878,
+                          "longitude": -87.636
+                        }
+                      }
+                    },
+                    "destination": {
+                      "location": {
+                        "latLng": {
+                          "latitude": 41.705,
+                          "longitude": -87.613
+                        }
+                      }
+                    },
+                    "vehicleSpec": {
+                      "type": "SEMI_TRAILER",
+                      "grossWeightKg": 36000
+                    },
+                    "departureTime": "2026-03-01T14:00:00Z"
+                  }
+                },
+                "with_alternatives": {
+                  "summary": "Request alternative routes",
+                  "value": {
+                    "origin": {
+                      "location": {
+                        "latLng": {
+                          "latitude": 41.878,
+                          "longitude": -87.636
+                        }
+                      }
+                    },
+                    "destination": {
+                      "location": {
+                        "latLng": {
+                          "latitude": 41.705,
+                          "longitude": -87.613
+                        }
+                      }
+                    },
+                    "computeAlternativeRoutes": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successfully computed route(s). The response matches the Google Routes API `computeRoutes` response shape exactly, with an additional `enrichment` field on each step.",
+            "headers": {
+              "X-Route-Id": {
+                "description": "The internal route resource ID. Use this to access the route via the `/v1/routes/{id}` endpoint.",
+                "schema": {
+                  "type": "string",
+                  "example": "route_01HYX3MPK5XJQJG0NB0PRSDVWC"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GoogleComputeRoutesResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request (e.g. unsupported waypoint type, missing location)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": {
+                    "type": "invalid_request_error",
+                    "code": "unsupported_waypoint_type",
+                    "message": "Address and placeId waypoints are not supported; use latLng coordinates.",
+                    "param": "origin"
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Routing failed (e.g. no route found)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": {
+                    "type": "routing_error",
+                    "code": "no_route_found",
+                    "message": "No route could be found between the given locations."
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/routes": {
+      "post": {
+        "summary": "Create Route",
+        "description": "Creates a route resource with physics enrichment.",
+        "operationId": "createRoute",
+        "tags": [
+          "Routes"
+        ],
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "description": "A unique key to ensure idempotent route creation. If a request with the same key was already processed, the cached response is returned. If the same key is reused with a different request body, a 422 error is returned.",
+            "schema": {
+              "type": "string",
+              "example": "req_abc123"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ComputeRoutesRequest"
+              },
+              "examples": {
+                "simple": {
+                  "summary": "Simple route request",
+                  "value": {
+                    "origin": {
+                      "location": {
+                        "latLng": {
+                          "latitude": 41.878,
+                          "longitude": -87.636
+                        }
+                      }
+                    },
+                    "destination": {
+                      "location": {
+                        "latLng": {
+                          "latitude": 41.705,
+                          "longitude": -87.613
+                        }
+                      }
+                    }
+                  }
+                },
+                "with_webhook": {
+                  "summary": "Route with webhook callback",
+                  "value": {
+                    "origin": {
+                      "location": {
+                        "latLng": {
+                          "latitude": 41.878,
+                          "longitude": -87.636
+                        }
+                      }
+                    },
+                    "destination": {
+                      "location": {
+                        "latLng": {
+                          "latitude": 41.705,
+                          "longitude": -87.613
+                        }
+                      }
+                    },
+                    "vehicleSpec": {
+                      "type": "SEMI_TRAILER"
+                    },
+                    "driverState": {
+                      "fatigueScore": 0.5
+                    },
+                    "webhookUrl": "https://example.com/webhook"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Route computed synchronously (fast path). Status is `complete` with full route data.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RouteResource"
+                },
+                "example": {
+                  "id": "route_01HYX3MPK5XJQJG0NB0PRSDVWC",
+                  "object": "route",
+                  "status": "complete",
+                  "createdAt": "2026-02-28T15:12:32Z",
+                  "routes": [],
+                  "fallbackInfo": null,
+                  "geocodingResults": null,
+                  "warnings": [],
+                  "error": null
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Route accepted for async processing (slow path). Poll `GET /v1/routes/{id}` for completion.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RouteResource"
+                },
+                "example": {
+                  "id": "route_01HYX3MPK5XJQJG0NB0PRSDVWC",
+                  "object": "route",
+                  "status": "processing",
+                  "createdAt": "2026-02-28T15:12:32Z",
+                  "routes": [],
+                  "fallbackInfo": null,
+                  "geocodingResults": null,
+                  "warnings": [],
+                  "error": null
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Idempotency key lock contention. Retry after the specified delay.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds to wait before retrying",
+                "schema": {
+                  "type": "integer",
+                  "example": 1
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Idempotency key reused with a different request body, or routing error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/routes/{route_id}": {
+      "get": {
+        "summary": "Get Route",
+        "description": "Retrieve a route resource by its ID. Completed routes expire after 6 hours.",
+        "operationId": "getRoute",
+        "tags": [
+          "Routes"
+        ],
+        "parameters": [
+          {
+            "name": "route_id",
+            "in": "path",
+            "required": true,
+            "description": "The unique route resource ID (prefixed with `route_`)",
+            "schema": {
+              "type": "string",
+              "example": "route_01HYX3MPK5XJQJG0NB0PRSDVWC"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Route resource found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RouteResource"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Route not found or expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": {
+                    "type": "invalid_request_error",
+                    "code": "route_not_found",
+                    "message": "Route route_01HYX3MPK5XJQJG0NB0PRSDVWC not found.",
+                    "param": "route_id"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete Route",
+        "description": "Permanently deletes a route and its associated telemetry data.",
+        "operationId": "deleteRoute",
+        "tags": [
+          "Routes"
+        ],
+        "parameters": [
+          {
+            "name": "route_id",
+            "in": "path",
+            "required": true,
+            "description": "The unique route resource ID (prefixed with `route_`)",
+            "schema": {
+              "type": "string",
+              "example": "route_01HYX3MPK5XJQJG0NB0PRSDVWC"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Route deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "description": "The deleted route ID",
+                      "example": "route_01HYX3MPK5XJQJG0NB0PRSDVWC"
+                    },
+                    "object": {
+                      "type": "string",
+                      "enum": [
+                        "route"
+                      ],
+                      "example": "route"
+                    },
+                    "deleted": {
+                      "type": "boolean",
+                      "example": true
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "object",
+                    "deleted"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Route not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/routes/{route_id}/telemetry": {
+      "get": {
+        "summary": "Get Route Telemetry",
+        "description": "Returns paginated segment-level physics data (grade, curvature, fuel burn, stress) for a completed route.",
+        "operationId": "getRouteTelemetry",
+        "tags": [
+          "Telemetry"
+        ],
+        "parameters": [
+          {
+            "name": "route_id",
+            "in": "path",
+            "required": true,
+            "description": "The unique route resource ID",
+            "schema": {
+              "type": "string",
+              "example": "route_01HYX3MPK5XJQJG0NB0PRSDVWC"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "description": "Pagination cursor (segment index offset). Defaults to 0.",
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "minimum": 0
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Maximum number of segments to return per page. Defaults to 50, max 200.",
+            "schema": {
+              "type": "integer",
+              "default": 50,
+              "minimum": 1,
+              "maximum": 200
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Telemetry data for the route",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TelemetryResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Route not found or still processing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "not_found": {
+                    "summary": "Route not found",
+                    "value": {
+                      "error": {
+                        "type": "invalid_request_error",
+                        "code": "route_not_found",
+                        "message": "Route not found.",
+                        "param": "route_id"
+                      }
+                    }
+                  },
+                  "still_processing": {
+                    "summary": "Route still processing",
+                    "value": {
+                      "error": {
+                        "type": "invalid_request_error",
+                        "code": "route_processing",
+                        "message": "Route is still processing. Poll GET /v1/routes/{route_id} until status is 'complete'.",
+                        "param": "route_id"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "LatLng": {
+        "type": "object",
+        "description": "A latitude/longitude coordinate pair",
+        "properties": {
+          "latitude": {
+            "type": "number",
+            "format": "double",
+            "description": "Latitude in degrees",
+            "example": 41.878
+          },
+          "longitude": {
+            "type": "number",
+            "format": "double",
+            "description": "Longitude in degrees",
+            "example": -87.636
+          }
+        },
+        "required": [
+          "latitude",
+          "longitude"
+        ]
+      },
+      "Location": {
+        "type": "object",
+        "description": "A geographic location",
+        "properties": {
+          "latLng": {
+            "$ref": "#/components/schemas/LatLng"
+          },
+          "heading": {
+            "type": "integer",
+            "description": "Compass heading 0-360 (optional)",
+            "minimum": 0,
+            "maximum": 360
+          }
+        },
+        "required": [
+          "latLng"
+        ]
+      },
+      "Waypoint": {
+        "type": "object",
+        "description": "A waypoint for route computation. Only `location` with `latLng` is supported. `placeId` and `address` are not supported and will return an error.",
+        "properties": {
+          "location": {
+            "$ref": "#/components/schemas/Location",
+            "description": "Geographic location (required \u2014 must use latLng coordinates)"
+          },
+          "placeId": {
+            "type": "string",
+            "description": "**Not supported.** Providing this will return an error. Use `location` with `latLng` instead."
+          },
+          "address": {
+            "type": "string",
+            "description": "**Not supported.** Providing this will return an error. Use `location` with `latLng` instead."
+          },
+          "via": {
+            "type": "boolean",
+            "default": false,
+            "description": "If true, the waypoint is a pass-through point (no stop). If false, the waypoint is a stop."
+          },
+          "vehicleStopover": {
+            "type": "boolean",
+            "default": false,
+            "description": "Accepted for Google compatibility, ignored."
+          },
+          "sideOfRoad": {
+            "type": "boolean",
+            "default": false,
+            "description": "Accepted for Google compatibility, ignored."
+          }
+        }
+      },
+      "RouteModifiers": {
+        "type": "object",
+        "description": "Modifiers that affect route computation",
+        "properties": {
+          "avoidTolls": {
+            "type": "boolean",
+            "default": false,
+            "description": "When true, avoids toll roads"
+          },
+          "avoidHighways": {
+            "type": "boolean",
+            "default": false,
+            "description": "When true, avoids highways"
+          },
+          "avoidFerries": {
+            "type": "boolean",
+            "default": false,
+            "description": "When true, avoids ferries"
+          },
+          "avoidIndoor": {
+            "type": "boolean",
+            "default": false,
+            "description": "Accepted for Google compatibility, ignored."
+          }
+        }
+      },
+      "VehicleSpec": {
+        "type": "object",
+        "description": "Vehicle specification for physics-based enrichment. All fields are optional \u2014 unset fields fall back to the preset for the given `type`.",
+        "properties": {
+          "type": {
+            "type": "string",
+            "default": "SEMI_TRAILER",
+            "enum": [
+              "SEMI_TRAILER",
+              "BOX_TRUCK"
+            ],
+            "description": "Vehicle preset type. Defaults to SEMI_TRAILER."
+          },
+          "grossWeightKg": {
+            "type": "number",
+            "description": "Gross vehicle weight in kilograms",
+            "example": 36000
+          },
+          "dragCoefficient": {
+            "type": "number",
+            "description": "Aerodynamic drag coefficient",
+            "example": 0.65
+          },
+          "frontalAreaM2": {
+            "type": "number",
+            "description": "Frontal area in square meters",
+            "example": 9.0
+          },
+          "rollingResistance": {
+            "type": "number",
+            "description": "Rolling resistance coefficient",
+            "example": 0.007
+          },
+          "heightM": {
+            "type": "number",
+            "description": "Vehicle height in meters",
+            "example": 4.11
+          },
+          "widthM": {
+            "type": "number",
+            "description": "Vehicle width in meters",
+            "example": 2.6
+          },
+          "lengthM": {
+            "type": "number",
+            "description": "Vehicle length in meters",
+            "example": 21.64
+          },
+          "axleLoadTonnes": {
+            "type": "number",
+            "description": "Maximum axle load in tonnes",
+            "example": 9.0
+          },
+          "fuelType": {
+            "type": "string",
+            "default": "DIESEL",
+            "description": "Fuel type",
+            "example": "DIESEL"
+          },
+          "idleFuelLitersPerHour": {
+            "type": "number",
+            "description": "Fuel consumption at idle in liters per hour",
+            "example": 2.5
+          },
+          "engineEfficiency": {
+            "type": "number",
+            "description": "Engine thermal efficiency (0-1)",
+            "example": 0.4
+          }
+        }
+      },
+      "ComputeRoutesRequest": {
+        "type": "object",
+        "description": "Request body for route computation. Accepts all Google Routes API fields \u2014 unsupported fields are silently ignored.",
+        "required": [
+          "origin",
+          "destination"
+        ],
+        "properties": {
+          "origin": {
+            "$ref": "#/components/schemas/Waypoint",
+            "description": "Origin waypoint (required)"
+          },
+          "destination": {
+            "$ref": "#/components/schemas/Waypoint",
+            "description": "Destination waypoint (required)"
+          },
+          "intermediates": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Waypoint"
+            },
+            "default": [],
+            "description": "Intermediate waypoints (stops or pass-through points)"
+          },
+          "travelMode": {
+            "type": "string",
+            "default": "DRIVE",
+            "description": "Travel mode. Only `DRIVE` is supported (truck routing)."
+          },
+          "routingPreference": {
+            "type": "string",
+            "default": "TRAFFIC_UNAWARE",
+            "description": "Routing preference. Traffic is not currently modeled."
+          },
+          "departureTime": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Departure time in ISO 8601 UTC format. Affects school zone detection and time-based routing."
+          },
+          "computeAlternativeRoutes": {
+            "type": "boolean",
+            "default": false,
+            "description": "When true and no intermediate waypoints, returns up to 3 alternative routes."
+          },
+          "routeModifiers": {
+            "$ref": "#/components/schemas/RouteModifiers",
+            "description": "Route modifiers (avoid tolls, highways, ferries)"
+          },
+          "languageCode": {
+            "type": "string",
+            "default": "en-US",
+            "description": "Language for navigation instructions"
+          },
+          "vehicleSpec": {
+            "$ref": "#/components/schemas/VehicleSpec",
+            "description": "Vehicle specification for physics enrichment. Defaults to SEMI_TRAILER preset if omitted."
+          },
+          "routingProfile": {
+            "type": "string",
+            "default": "balanced",
+            "enum": [
+              "balanced",
+              "fuel_optimal",
+              "time_optimal",
+              "fatigue_aware"
+            ],
+            "description": "Routing profile that adjusts enrichment weights"
+          },
+          "profileOverrides": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "number"
+            },
+            "default": {},
+            "description": "Override individual profile weights (e.g. `{\"fuelWeight\": 1.5}`)"
+          },
+          "webhookUrl": {
+            "type": "string",
+            "format": "uri",
+            "description": "Webhook URL for async route completion notifications. Only used by `POST /v1/routes`."
+          }
+        }
+      },
+      "Polyline": {
+        "type": "object",
+        "description": "An encoded polyline string (Google precision 5)",
+        "properties": {
+          "encodedPolyline": {
+            "type": "string",
+            "description": "Encoded polyline string at precision 5 (Google standard)"
+          }
+        },
+        "required": [
+          "encodedPolyline"
+        ]
+      },
+      "NavigationInstruction": {
+        "type": "object",
+        "description": "Navigation instruction for a route step",
+        "properties": {
+          "maneuver": {
+            "type": "string",
+            "description": "Google-compatible maneuver type",
+            "enum": [
+              "DEPART",
+              "STRAIGHT",
+              "NAME_CHANGE",
+              "TURN_SLIGHT_RIGHT",
+              "TURN_RIGHT",
+              "TURN_SHARP_RIGHT",
+              "TURN_SLIGHT_LEFT",
+              "TURN_LEFT",
+              "TURN_SHARP_LEFT",
+              "UTURN_RIGHT",
+              "UTURN_LEFT",
+              "RAMP_RIGHT",
+              "RAMP_LEFT",
+              "FORK_RIGHT",
+              "FORK_LEFT",
+              "MERGE",
+              "ROUNDABOUT_RIGHT",
+              "ROUNDABOUT_LEFT",
+              "FERRY",
+              "FERRY_TRAIN",
+              "MANEUVER_UNSPECIFIED"
+            ]
+          },
+          "instructions": {
+            "type": "string",
+            "description": "Human-readable navigation instruction text"
+          }
+        },
+        "required": [
+          "maneuver",
+          "instructions"
+        ]
+      },
+      "StepEnrichment": {
+        "type": "object",
+        "description": "Physics-based enrichment data for a route step. This is the extension data that rides alongside Google's standard step fields.",
+        "properties": {
+          "gradePercent": {
+            "type": "number",
+            "nullable": true,
+            "description": "Road grade as a percentage (positive = uphill, negative = downhill)",
+            "example": 2.5
+          },
+          "curvatureDegreesPerKm": {
+            "type": "number",
+            "nullable": true,
+            "description": "Road curvature in degrees of bearing change per kilometer",
+            "example": 15.3
+          },
+          "fuelBurnLiters": {
+            "type": "number",
+            "nullable": true,
+            "description": "Estimated fuel burn for this step in liters",
+            "example": 0.42
+          },
+          "zoneFlags": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "SCHOOL_ZONE",
+                "RESIDENTIAL"
+              ]
+            },
+            "description": "Active zone flags for this step",
+            "example": [
+              "SCHOOL_ZONE"
+            ]
+          },
+          "speedLimitKmh": {
+            "type": "number",
+            "nullable": true,
+            "description": "Speed limit in km/h (if available)"
+          },
+          "roadClass": {
+            "type": "string",
+            "nullable": true,
+            "description": "Road classification",
+            "enum": [
+              "MOTORWAY",
+              "TRUNK",
+              "PRIMARY",
+              "SECONDARY",
+              "TERTIARY",
+              "UNCLASSIFIED",
+              "RESIDENTIAL",
+              "SERVICE_ROAD"
+            ]
+          },
+          "degradedFields": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "List of fields that could not be computed (e.g. elevation unavailable)"
+          },
+          "degradedReason": {
+            "type": "string",
+            "nullable": true,
+            "description": "Reason for field degradation (e.g. 'elevation_unavailable')"
+          }
+        }
+      },
+      "RouteLegStep": {
+        "type": "object",
+        "description": "A step within a route leg. Matches Google's RouteLegStep with an additional `enrichment` field.",
+        "properties": {
+          "distanceMeters": {
+            "type": "integer",
+            "description": "Step distance in meters"
+          },
+          "staticDuration": {
+            "type": "string",
+            "description": "Step duration as a string (e.g. `\"28s\"`)",
+            "example": "28s"
+          },
+          "polyline": {
+            "$ref": "#/components/schemas/Polyline"
+          },
+          "startLocation": {
+            "type": "object",
+            "description": "Start location",
+            "properties": {
+              "latLng": {
+                "$ref": "#/components/schemas/LatLng"
+              }
+            }
+          },
+          "endLocation": {
+            "type": "object",
+            "description": "End location",
+            "properties": {
+              "latLng": {
+                "$ref": "#/components/schemas/LatLng"
+              }
+            }
+          },
+          "navigationInstruction": {
+            "$ref": "#/components/schemas/NavigationInstruction"
+          },
+          "travelMode": {
+            "type": "string",
+            "default": "DRIVE",
+            "description": "Always `DRIVE`"
+          },
+          "enrichment": {
+            "$ref": "#/components/schemas/StepEnrichment",
+            "description": "Physics-based enrichment data (Motion extension)"
+          },
+          "travelAdvisory": {
+            "type": "object",
+            "nullable": true,
+            "description": "Google field \u2014 always null"
+          },
+          "localizedValues": {
+            "type": "object",
+            "nullable": true,
+            "description": "Google field \u2014 always null"
+          },
+          "transitDetails": {
+            "type": "object",
+            "nullable": true,
+            "description": "Google field \u2014 always null"
+          }
+        },
+        "required": [
+          "distanceMeters",
+          "staticDuration",
+          "polyline",
+          "startLocation",
+          "endLocation",
+          "navigationInstruction"
+        ]
+      },
+      "RouteLeg": {
+        "type": "object",
+        "description": "A leg of a route (between two consecutive stops). Matches Google's RouteLeg.",
+        "properties": {
+          "distanceMeters": {
+            "type": "integer",
+            "description": "Total leg distance in meters"
+          },
+          "duration": {
+            "type": "string",
+            "description": "Total leg duration (e.g. `\"1820s\"`)"
+          },
+          "staticDuration": {
+            "type": "string",
+            "description": "Same as duration (traffic not modeled)"
+          },
+          "polyline": {
+            "$ref": "#/components/schemas/Polyline"
+          },
+          "startLocation": {
+            "type": "object",
+            "properties": {
+              "latLng": {
+                "$ref": "#/components/schemas/LatLng"
+              }
+            }
+          },
+          "endLocation": {
+            "type": "object",
+            "properties": {
+              "latLng": {
+                "$ref": "#/components/schemas/LatLng"
+              }
+            }
+          },
+          "steps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RouteLegStep"
+            },
+            "description": "Individual steps within this leg"
+          },
+          "travelAdvisory": {
+            "type": "object",
+            "nullable": true,
+            "description": "Google field \u2014 always null"
+          },
+          "localizedValues": {
+            "type": "object",
+            "nullable": true,
+            "description": "Google field \u2014 always null"
+          },
+          "stepsOverview": {
+            "type": "object",
+            "nullable": true,
+            "description": "Google field \u2014 always null"
+          }
+        },
+        "required": [
+          "distanceMeters",
+          "duration",
+          "staticDuration",
+          "polyline",
+          "startLocation",
+          "endLocation",
+          "steps"
+        ]
+      },
+      "Viewport": {
+        "type": "object",
+        "description": "A bounding box for the route",
+        "properties": {
+          "low": {
+            "type": "object",
+            "description": "Southwest corner",
+            "properties": {
+              "latitude": {
+                "type": "number"
+              },
+              "longitude": {
+                "type": "number"
+              }
+            }
+          },
+          "high": {
+            "type": "object",
+            "description": "Northeast corner",
+            "properties": {
+              "latitude": {
+                "type": "number"
+              },
+              "longitude": {
+                "type": "number"
+              }
+            }
+          }
+        }
+      },
+      "Route": {
+        "type": "object",
+        "description": "A computed route. Matches Google's Route object with enrichment on each step.",
+        "properties": {
+          "routeLabels": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "DEFAULT_ROUTE",
+                "DEFAULT_ROUTE_ALTERNATE"
+              ]
+            },
+            "description": "Route labels. Primary route is `DEFAULT_ROUTE`, alternatives are `DEFAULT_ROUTE_ALTERNATE`."
+          },
+          "legs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RouteLeg"
+            }
+          },
+          "distanceMeters": {
+            "type": "integer",
+            "description": "Total route distance in meters"
+          },
+          "duration": {
+            "type": "string",
+            "description": "Total route duration (e.g. `\"3600s\"`)"
+          },
+          "staticDuration": {
+            "type": "string",
+            "description": "Same as duration (traffic not modeled)"
+          },
+          "polyline": {
+            "$ref": "#/components/schemas/Polyline",
+            "description": "Full route polyline"
+          },
+          "description": {
+            "type": "string",
+            "description": "Route description"
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Route warnings"
+          },
+          "viewport": {
+            "$ref": "#/components/schemas/Viewport"
+          },
+          "travelAdvisory": {
+            "type": "object",
+            "nullable": true
+          },
+          "optimizedIntermediateWaypointIndex": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          },
+          "localizedValues": {
+            "type": "object",
+            "nullable": true
+          },
+          "routeToken": {
+            "type": "string",
+            "nullable": true
+          },
+          "polylineDetails": {
+            "type": "object",
+            "nullable": true
+          }
+        },
+        "required": [
+          "routeLabels",
+          "legs",
+          "distanceMeters",
+          "duration",
+          "staticDuration",
+          "polyline"
+        ]
+      },
+      "GoogleComputeRoutesResponse": {
+        "type": "object",
+        "description": "",
+        "properties": {
+          "routes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Route"
+            },
+            "description": "Computed routes (primary + alternatives if requested)"
+          },
+          "fallbackInfo": {
+            "type": "object",
+            "nullable": true,
+            "description": "Google field \u2014 always null"
+          },
+          "geocodingResults": {
+            "type": "object",
+            "nullable": true,
+            "description": "Google field \u2014 always null"
+          }
+        },
+        "required": [
+          "routes"
+        ]
+      },
+      "RouteResource": {
+        "type": "object",
+        "description": "A route resource. Used by the `/v1/routes` endpoint family.",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique route ID (prefixed with `route_`)",
+            "example": "route_01HYX3MPK5XJQJG0NB0PRSDVWC"
+          },
+          "object": {
+            "type": "string",
+            "enum": [
+              "route"
+            ],
+            "description": "Object type (always `route`)"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "processing",
+              "complete",
+              "failed"
+            ],
+            "description": "Current status of the route computation.\n\n- `processing` — route is still being computed (routes array is empty)\n- `complete` — route computation finished (routes array is populated)\n- `failed` — route computation failed (error object is populated)"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO 8601 UTC timestamp of creation",
+            "example": "2026-02-28T15:12:32Z"
+          },
+          "routes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Route"
+            },
+            "description": "Computed routes (empty while `processing`)"
+          },
+          "fallbackInfo": {
+            "type": "object",
+            "nullable": true
+          },
+          "geocodingResults": {
+            "type": "object",
+            "nullable": true
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "error": {
+            "type": "object",
+            "nullable": true,
+            "description": "Error details (populated when `status` is `failed`)",
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "required": [
+          "id",
+          "object",
+          "status",
+          "createdAt",
+          "routes"
+        ]
+      },
+      "TelemetrySegment": {
+        "type": "object",
+        "description": "Telemetry data for a single route segment",
+        "properties": {
+          "index": {
+            "type": "integer",
+            "description": "Segment index"
+          },
+          "startLocation": {
+            "type": "object",
+            "properties": {
+              "latLng": {
+                "$ref": "#/components/schemas/LatLng"
+              }
+            }
+          },
+          "endLocation": {
+            "type": "object",
+            "properties": {
+              "latLng": {
+                "$ref": "#/components/schemas/LatLng"
+              }
+            }
+          },
+          "distanceMeters": {
+            "type": "integer",
+            "description": "Segment distance in meters"
+          },
+          "durationSeconds": {
+            "type": "integer",
+            "description": "Segment duration in seconds"
+          },
+          "gradePercent": {
+            "type": "number",
+            "nullable": true,
+            "description": "Road grade percentage"
+          },
+          "curvatureDegreesPerKm": {
+            "type": "number",
+            "nullable": true,
+            "description": "Curvature in degrees per km"
+          },
+          "fuelBurnLiters": {
+            "type": "number",
+            "nullable": true,
+            "description": "Estimated fuel burn in liters"
+          },
+          "zoneFlags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Active zone flags (SCHOOL_ZONE, RESIDENTIAL)"
+          },
+          "speedLimitKmh": {
+            "type": "number",
+            "nullable": true,
+            "description": "Speed limit in km/h"
+          },
+          "roadClass": {
+            "type": "string",
+            "nullable": true,
+            "description": "Road classification"
+          }
+        }
+      },
+      "TelemetrySummary": {
+        "type": "object",
+        "description": "Aggregated telemetry summary for the entire route",
+        "properties": {
+          "totalFuelBurnLiters": {
+            "type": "number",
+            "nullable": true,
+            "description": "Total estimated fuel burn in liters"
+          },
+          "totalGradeGainMeters": {
+            "type": "number",
+            "nullable": true,
+            "description": "Total elevation gain in meters"
+          },
+          "totalGradeLossMeters": {
+            "type": "number",
+            "nullable": true,
+            "description": "Total elevation loss in meters"
+          },
+          "maxGradePercent": {
+            "type": "number",
+            "nullable": true,
+            "description": "Maximum grade percentage on the route"
+          },
+          "averageCurvatureDegreesPerKm": {
+            "type": "number",
+            "nullable": true,
+            "description": "Average curvature across the route"
+          },
+          "schoolZoneCount": {
+            "type": "integer",
+            "default": 0,
+            "description": "Number of segments passing through school zones"
+          },
+          "residentialSegmentCount": {
+            "type": "integer",
+            "default": 0,
+            "description": "Number of segments in residential areas"
+          }
+        }
+      },
+      "TelemetryResponse": {
+        "type": "object",
+        "description": "Full telemetry response with summary and per-segment data",
+        "properties": {
+          "routeId": {
+            "type": "string",
+            "description": "Associated route ID"
+          },
+          "computedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When telemetry was computed"
+          },
+          "vehicleSpec": {
+            "type": "object",
+            "description": "Resolved vehicle specification used for computation"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/TelemetrySummary"
+          },
+          "segments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TelemetrySegment"
+            },
+            "description": "Paginated segment telemetry data"
+          },
+          "hasMore": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether more segments are available"
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true,
+            "description": "Cursor for the next page of segments"
+          }
+        },
+        "required": [
+          "routeId",
+          "computedAt",
+          "vehicleSpec",
+          "summary",
+          "segments"
+        ]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "description": "Structured error response.",
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/ErrorDetail"
+          }
+        },
+        "required": [
+          "error"
+        ]
+      },
+      "ErrorDetail": {
+        "type": "object",
+        "description": "Error detail object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "invalid_request_error",
+              "routing_error",
+              "rate_limit_error",
+              "api_error",
+              "enrichment_error"
+            ],
+            "description": "Error type category"
+          },
+          "code": {
+            "type": "string",
+            "description": "Machine-readable error code",
+            "example": "route_not_found"
+          },
+          "message": {
+            "type": "string",
+            "description": "Human-readable error message"
+          },
+          "param": {
+            "type": "string",
+            "nullable": true,
+            "description": "The parameter that caused the error"
+          },
+          "doc_url": {
+            "type": "string",
+            "nullable": true,
+            "description": "URL to relevant documentation"
+          }
+        },
+        "required": [
+          "type",
+          "code",
+          "message"
+        ]
+      },
+      "WebhookEvent": {
+        "type": "object",
+        "description": "Webhook event payload sent when a route computation completes or fails",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique event ID (prefixed with `evt_`)",
+            "example": "evt_01HYX4MPK5XJQJG0NB0PRSDVWC"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "route.complete",
+              "route.failed"
+            ],
+            "description": "Event type"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO 8601 UTC timestamp",
+            "example": "2026-02-28T15:12:35Z"
+          },
+          "data": {
+            "type": "object",
+            "description": "Event data",
+            "properties": {
+              "routeId": {
+                "type": "string",
+                "description": "Associated route ID"
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "complete",
+                  "failed"
+                ]
+              },
+              "error": {
+                "type": "object",
+                "nullable": true,
+                "description": "Error details (only on `route.failed` events)",
+                "properties": {
+                  "code": {
+                    "type": "string"
+                  },
+                  "message": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "required": [
+              "routeId",
+              "status"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "createdAt",
+          "data"
+        ]
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Google-Compatible",
+      "description": "Drop-in replacement for Google Routes API. Same request/response format."
+    },
+    {
+      "name": "Routes",
+      "description": "Stateful route management with sync/async computation."
+    },
+    {
+      "name": "Telemetry",
+      "description": "Segment-level physics telemetry data (grade, curvature, fuel burn, stress)."
+    },
+    {
+      "name": "Health",
+      "description": "API health and status."
+    }
+  ]
+}
