@@ -6,7 +6,7 @@ services:
     volumes:
       - valhalla_data:/data
     environment:
-      - tile_urls=https://download.geofabrik.de/north-america/us/illinois-latest.osm.pbf
+      - tile_urls=https://download.geofabrik.de/north-america/us/california/norcal-latest.osm.pbf
       - serve_tiles=True
       - build_elevation=False
       - build_admins=True
