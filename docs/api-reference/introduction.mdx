@@ -5,7 +5,7 @@ description: 'Motion Freight Router API — truck routing with physics-based enr
 
 ## Overview
 
-Motion computes optimized truck routes enriched with segment-level physics data — grade, curvature, fuel consumption, driver stress, and zone awareness. It exposes two interfaces to the same routing engine:
+Motion computes optimized truck routes enriched with segment-level physics data — grade, curvature, fuel consumption, and zone awareness. It exposes two interfaces to the same routing engine:
 
 <CardGroup cols={2}>
   <Card title="Google-Compatible" icon="arrows-rotate" href="/api-reference/endpoint/google-compute-routes">
@@ -32,7 +32,6 @@ Motion computes optimized truck routes enriched with segment-level physics data 
 | `GET` | `/v1/routes/{route_id}` | Retrieve a route by ID |
 | `DELETE` | `/v1/routes/{route_id}` | Delete a route |
 | `GET` | `/v1/routes/{route_id}/telemetry` | Get segment-level telemetry data |
-| `PATCH` | `/v1/routes/{route_id}/driver-state` | Update driver state and re-score enrichment |
 
 ## Enrichment
 
@@ -43,7 +42,6 @@ Every route step is enriched with physics data computed from elevation models, r
 | `gradePercent` | Road grade derived from USGS elevation data |
 | `curvatureDegreesPerKm` | Bearing change per kilometer |
 | `fuelBurnLiters` | Fuel consumption estimate using road-load equations |
-| `stressFactor` | Driver stress score based on maneuvers, grade, zones, and fatigue |
 | `zoneFlags` | School zone and residential area detection |
 | `speedLimitKmh` | Posted speed limit |
 | `roadClass` | Road classification (motorway, primary, residential, etc.) |
@@ -61,12 +59,12 @@ Two built-in presets are available. All parameters can be individually overridde
 
 Profiles control the relative weight of each enrichment factor:
 
-| Profile | Fuel | Stress | Grade | Zone |
-|---------|------|--------|-------|------|
-| `balanced` | 1.0 | 1.0 | 1.0 | 1.0 |
-| `fuel_optimal` | 2.0 | 0.5 | 1.5 | 0.5 |
-| `time_optimal` | 0.3 | 0.3 | 0.3 | 0.3 |
-| `fatigue_aware` | 0.8 | 2.0 | 1.0 | 1.5 |
+| Profile | Fuel | Grade | Zone |
+|---------|------|-------|------|
+| `balanced` | 1.0 | 1.0 | 1.0 |
+| `fuel_optimal` | 2.0 | 1.5 | 0.5 |
+| `time_optimal` | 0.3 | 0.3 | 0.3 |
+| `fatigue_aware` | 0.8 | 1.0 | 1.5 |
 
 ## Errors
 
