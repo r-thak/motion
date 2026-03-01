@@ -52,6 +52,27 @@ def _validate_waypoints(request_body: ComputeRoutesRequest) -> None:
             )
 
 
+@router.post("/proxy/google/directions/v2:computeRoutes")
+async def proxy_google_routes(request: Request):
+    """Proxy directly to Google's real Routes API to hide API key."""
+    body = await request.json()
+    
+    headers = {
+        "Content-Type": "application/json",
+        "X-Goog-Api-Key": settings.google_api_key,
+        "X-Goog-FieldMask": request.headers.get("X-Goog-FieldMask", "routes.polyline.encodedPolyline,routes.distanceMeters,routes.duration")
+    }
+    
+    # We must use httpx client
+    http_client = request.app.state.http_client
+    resp = await http_client.post(
+        "https://routes.googleapis.com/directions/v2:computeRoutes",
+        json=body,
+        headers=headers
+    )
+    return JSONResponse(status_code=resp.status_code, content=resp.json())
+
+
 @router.post("/directions/v2:computeRoutes")
 async def google_compute_routes(
     request_body: ComputeRoutesRequest,
