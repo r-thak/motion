@@ -8,4 +8,6 @@ Docs:    [https://motion-aaad6afa.mintlify.app](https://motion-aaad6afa.mintlify
   
 Will be disabled 03/01/2026 3pm CST  
 Public Temporary API URL: https://motion.rthak.com/  
-Public Temporary curlgen: [https://mgen.rthak.com/](https://mgen.rthak.com/)
+Public Temporary curlgen: [https://mgen.rthak.com/](https://mgen.rthak.com/)  
+  
+Transparency Notice: This repository was created for HackIllinois 2026 and is not a polished or well-secured and well-tested project. AI assisted code generation was used to create some portion of this repository.
