@@ -18,13 +18,13 @@ fi
 
 # 2. Stop background HTTP servers for Demo 1 and Demo 2
 echo "[2/4] Stopping background Demo HTTP servers (ports 8001, 8002)..."
-if pkill -f "python3 -m http.server 8001" &> /dev/null; then
+if pkill -f "python3.*serve_with_cors.py 8001" &> /dev/null || pkill -f "python3 -m http.server 8001" &> /dev/null; then
     echo "  - Demo 1 (port 8001) stopped."
 else
     echo "  - Demo 1 (port 8001) was not running."
 fi
 
-if pkill -f "python3 -m http.server 8002" &> /dev/null; then
+if pkill -f "python3.*serve_with_cors.py 8002" &> /dev/null || pkill -f "python3 -m http.server 8002" &> /dev/null; then
     echo "  - Demo 2 (port 8002) stopped."
 else
     echo "  - Demo 2 (port 8002) was not running."
