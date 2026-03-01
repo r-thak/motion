@@ -30,9 +30,13 @@
   let running = false;
   let RouteClass = null;
 
+  const MOTION_API = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    ? 'http://localhost:8000'
+    : 'https://motion.rthak.com';
+
   function getConfig() {
     return {
-      ourRouteApiBase: 'https://motion.rthak.com/directions/v2/computeRoutes'
+      ourRouteApiBase: `${MOTION_API}/directions/v2/computeRoutes`
     };
   }
 
@@ -66,7 +70,7 @@
       requestBody.intermediates = intermediates.map(formatPoint);
     }
 
-    return fetch('https://motion.rthak.com/proxy/google/directions/v2/computeRoutes', {
+    return fetch(`${MOTION_API}/proxy/google/directions/v2/computeRoutes`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(requestBody)
