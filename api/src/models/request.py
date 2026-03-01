@@ -3,7 +3,6 @@ from __future__ import annotations
 from pydantic import BaseModel, Field
 
 from src.models.vehicle import VehicleSpec
-from src.models.driver import DriverState
 
 
 class LatLng(BaseModel):
@@ -64,7 +63,6 @@ class ComputeRoutesRequest(BaseModel):
 
     # Our extension fields (ignored by Google-migrating clients)
     vehicleSpec: VehicleSpec | None = None
-    driverState: DriverState | None = None
     routingProfile: str = "balanced"
     profileOverrides: dict[str, float] = Field(default_factory=dict)
     webhookUrl: str | None = None  # Only used by POST /v1/routes (Stripe-style endpoint)

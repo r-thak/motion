@@ -8,23 +8,22 @@ import numpy as np
 import redis.asyncio as redis_lib
 
 from src.config import Settings
-from src.models.driver import DriverState
 from src.models.enrichment import StepEnrichment
 from src.models.response import Route, make_location
 from src.models.telemetry import TelemetryResponse, TelemetrySegment, TelemetrySummary
 from src.services.curvature import compute_curvature
 from src.services.elevation import get_elevations_batch
 from src.services.physics import estimate_fuel_burn
-from src.services.translator import MANEUVER_STRESS, VALHALLA_ROAD_CLASS
+from src.services.translator import VALHALLA_ROAD_CLASS
 from src.services.zones import ZoneIndex
 
 logger = logging.getLogger(__name__)
 
 ROUTING_PROFILES: dict[str, dict[str, float]] = {
-    "balanced":      {"fuelWeight": 1.0, "stressWeight": 1.0, "gradeWeight": 1.0, "zoneWeight": 1.0},
-    "fuel_optimal":  {"fuelWeight": 2.0, "stressWeight": 0.5, "gradeWeight": 1.5, "zoneWeight": 0.5},
-    "time_optimal":  {"fuelWeight": 0.3, "stressWeight": 0.3, "gradeWeight": 0.3, "zoneWeight": 0.3},
-    "fatigue_aware": {"fuelWeight": 0.8, "stressWeight": 2.0, "gradeWeight": 1.0, "zoneWeight": 1.5},
+    "balanced":      {"fuelWeight": 1.0, "gradeWeight": 1.0, "zoneWeight": 1.0},
+    "fuel_optimal":  {"fuelWeight": 2.0, "gradeWeight": 1.5, "zoneWeight": 0.5},
+    "time_optimal":  {"fuelWeight": 0.3, "gradeWeight": 0.3, "zoneWeight": 0.3},
+    "fatigue_aware": {"fuelWeight": 0.8, "gradeWeight": 1.0, "zoneWeight": 1.5},
 }
 
 
@@ -32,7 +31,6 @@ async def enrich_routes(
     routes: list[Route],
     all_step_points: list[list[list[tuple[float, float]]]],
     vehicle: dict,
-    driver_state: DriverState,
     departure_time: str | None,
     routing_profile: str,
     profile_overrides: dict[str, float],
@@ -122,18 +120,6 @@ async def enrich_routes(
                     if not zone_index.is_school_zone_active(departure_time, cumulative_time):
                         zone_flags.remove("SCHOOL_ZONE")
 
-                # Stress factor
-                maneuver_str = step.navigationInstruction.maneuver
-                base_stress, fatigue_mult = MANEUVER_STRESS.get(maneuver_str, (0.05, 0.5))
-                stress = base_stress + fatigue_mult * driver_state.fatigueScore
-                # Apply zone stress
-                if "SCHOOL_ZONE" in zone_flags:
-                    stress += 0.3 * profile.get("zoneWeight", 1.0)
-                if "RESIDENTIAL" in zone_flags:
-                    stress += 0.1 * profile.get("zoneWeight", 1.0)
-                stress *= profile.get("stressWeight", 1.0)
-                stress = min(stress, 1.0)
-
                 # Road class from maneuver (not available directly; use step info if available)
                 road_class = None
 
@@ -141,7 +127,6 @@ async def enrich_routes(
                     gradePercent=round(grade, 2) if grade is not None else None,
                     curvatureDegreesPerKm=round(curvature, 2),
                     fuelBurnLiters=None,  # filled after vectorized computation
-                    stressFactor=round(stress, 3),
                     zoneFlags=zone_flags,
                     speedLimitKmh=None,
                     roadClass=road_class,
@@ -166,7 +151,6 @@ async def enrich_routes(
                     gradePercent=round(grade, 2) if grade is not None else None,
                     curvatureDegreesPerKm=round(curvature, 2),
                     fuelBurnLiters=None,  # filled below
-                    stressFactor=round(stress, 3),
                     zoneFlags=zone_flags,
                     speedLimitKmh=None,
                     roadClass=road_class,
@@ -208,9 +192,6 @@ async def enrich_routes(
         school_count = sum(1 for s in segments if "SCHOOL_ZONE" in s.zoneFlags)
         residential_count = sum(1 for s in segments if "RESIDENTIAL" in s.zoneFlags)
 
-        stress_scores = [s.stressFactor for s in segments if s.stressFactor is not None]
-        overall_stress = sum(stress_scores) / len(stress_scores) if stress_scores else None
-
         summary = TelemetrySummary(
             totalFuelBurnLiters=round(total_fuel, 4) if total_fuel else None,
             totalGradeGainMeters=round(grade_gain, 2),
@@ -219,13 +200,11 @@ async def enrich_routes(
             averageCurvatureDegreesPerKm=round(avg_curvature, 2) if avg_curvature is not None else None,
             schoolZoneCount=school_count,
             residentialSegmentCount=residential_count,
-            overallStressScore=round(overall_stress, 3) if overall_stress is not None else None,
         )
 
         telemetry_responses.append(TelemetryResponse(
             routeId="",  # filled by caller
             computedAt=datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
-            driverState=driver_state.model_dump(),
             vehicleSpec=vehicle,
             summary=summary,
             segments=segments,

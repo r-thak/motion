@@ -10,7 +10,7 @@ from fastapi import FastAPI
 from src.config import settings
 from src.middleware.errors import register_error_handlers
 from src.middleware.rate_limit import RateLimitMiddleware
-from src.routes import google_compat, routes, telemetry, driver_state
+from src.routes import google_compat, routes, telemetry
 from src.services.zones import ZoneIndex
 from src.storage.redis import create_redis
 
@@ -97,7 +97,7 @@ app.add_middleware(RateLimitMiddleware)
 app.include_router(google_compat.router)
 app.include_router(routes.router)
 app.include_router(telemetry.router)
-app.include_router(driver_state.router)
+
 
 
 @app.get("/health")

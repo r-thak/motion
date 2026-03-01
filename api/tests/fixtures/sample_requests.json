@@ -23,7 +23,7 @@
     },
     {
         "name": "with_vehicle_and_driver",
-        "description": "A→B with vehicleSpec, driverState (fatigueScore: 0.7), and departureTime",
+        "description": "A→B with vehicleSpec and departureTime",
         "body": {
             "origin": {
                 "location": {
@@ -44,11 +44,6 @@
             "vehicleSpec": {
                 "type": "SEMI_TRAILER",
                 "grossWeightKg": 40000.0
-            },
-            "driverState": {
-                "fatigueScore": 0.7,
-                "attentionScore": 0.6,
-                "stressLevel": 0.3
             },
             "departureTime": "2026-03-01T14:00:00Z"
         }

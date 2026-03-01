@@ -9,7 +9,6 @@ import redis.asyncio as redis_lib
 from ulid import ULID
 
 from src.config import Settings
-from src.models.driver import DriverState
 from src.models.request import ComputeRoutesRequest
 from src.services.cache import route_cache_key, telemetry_cache_key
 from src.services.enrichment import enrich_routes
@@ -28,7 +27,6 @@ async def compute_route_background(
     route_id: str,
     request_body: ComputeRoutesRequest,
     resolved_vehicle: dict,
-    driver_state: DriverState,
     pg_pool: asyncpg.Pool,
     redis_client: redis_lib.Redis,
     http_client: httpx.AsyncClient,
@@ -65,7 +63,6 @@ async def compute_route_background(
             routes,
             all_step_points,
             resolved_vehicle,
-            driver_state,
             request_body.departureTime,
             request_body.routingProfile,
             request_body.profileOverrides,

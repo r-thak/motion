@@ -1,0 +1,474 @@
+Motion Freight Router API
+=========================
+Version: 1.0.0 | License: MIT
+
+Drop-in replacement for Google Routes API with segment-level physics
+enrichment for heavy freight. Provides both a Google-compatible synchronous
+endpoint and stateful route management endpoints.
+
+Base URL: http://localhost:8000
+
+================================================================================
+ENDPOINTS
+================================================================================
+
+--------------------------------------------------------------------------------
+GET /health
+--------------------------------------------------------------------------------
+Summary:    Health Check
+Description: Returns the health status of the API.
+
+Response 200: API is healthy
+  {
+    "status": "ok"
+  }
+
+--------------------------------------------------------------------------------
+POST /directions/v2:computeRoutes
+--------------------------------------------------------------------------------
+Summary:    Compute Routes (Google-compatible)
+Description: Drop-in replacement for the Google Routes API. Returns the
+             standard response with additional physics enrichment per step.
+Tags:       Google-Compatible
+
+Headers:
+  X-Goog-FieldMask (optional, string)
+    Accepted for Google compatibility but ignored. The full response is
+    always returned.
+
+Request Body: ComputeRoutesRequest (see Schemas)
+
+Example - Simple A to B route:
+  {
+    "origin": {
+      "location": {
+        "latLng": { "latitude": 41.878, "longitude": -87.636 }
+      }
+    },
+    "destination": {
+      "location": {
+        "latLng": { "latitude": 41.705, "longitude": -87.613 }
+      }
+    }
+  }
+
+Example - Route with vehicle spec and driver state:
+  {
+    "origin": {
+      "location": {
+        "latLng": { "latitude": 41.878, "longitude": -87.636 }
+      }
+    },
+    "destination": {
+      "location": {
+        "latLng": { "latitude": 41.705, "longitude": -87.613 }
+      }
+    },
+    "vehicleSpec": { "type": "SEMI_TRAILER", "grossWeightKg": 36000 },
+    "departureTime": "2026-03-01T14:00:00Z"
+  }
+
+Example - Request alternative routes:
+  {
+    "origin": { ... },
+    "destination": { ... },
+    "computeAlternativeRoutes": true
+  }
+
+Response 200: Successfully computed route(s)
+  Headers:
+    X-Route-Id (string) - Route resource ID for use with /v1/routes/{id}
+  Body: GoogleComputeRoutesResponse
+
+Response 400: Invalid request
+  {
+    "error": {
+      "type": "invalid_request_error",
+      "code": "unsupported_waypoint_type",
+      "message": "Address and placeId waypoints are not supported; use latLng coordinates.",
+      "param": "origin"
+    }
+  }
+
+Response 422: Routing failed
+  {
+    "error": {
+      "type": "routing_error",
+      "code": "no_route_found",
+      "message": "No route could be found between the given locations."
+    }
+  }
+
+Response 429: Rate limit exceeded
+
+--------------------------------------------------------------------------------
+POST /v1/routes
+--------------------------------------------------------------------------------
+Summary:    Create Route
+Description: Creates a route resource with physics enrichment.
+Tags:       Routes
+
+Headers:
+  Idempotency-Key (optional, string)
+    A unique key to ensure idempotent route creation. Same key + same body
+    returns cached response. Same key + different body returns 422.
+
+Request Body: ComputeRoutesRequest (see Schemas)
+
+Example - Simple route request:
+  {
+    "origin": {
+      "location": {
+        "latLng": { "latitude": 41.878, "longitude": -87.636 }
+      }
+    },
+    "destination": {
+      "location": {
+        "latLng": { "latitude": 41.705, "longitude": -87.613 }
+      }
+    }
+  }
+
+Example - Route with webhook callback:
+  {
+    "origin": { ... },
+    "destination": { ... },
+    "vehicleSpec": { "type": "SEMI_TRAILER" },
+    "webhookUrl": "https://example.com/webhook"
+  }
+
+Response 200: Route computed synchronously. Status is "complete".
+  {
+    "id": "route_01HYX3MPK5XJQJG0NB0PRSDVWC",
+    "object": "route",
+    "status": "complete",
+    "createdAt": "2026-02-28T15:12:32Z",
+    "routes": [ ... ],
+    "error": null
+  }
+
+Response 202: Route accepted for async processing. Poll GET /v1/routes/{id}.
+  {
+    "id": "route_01HYX3MPK5XJQJG0NB0PRSDVWC",
+    "object": "route",
+    "status": "processing",
+    "createdAt": "2026-02-28T15:12:32Z",
+    "routes": [],
+    "error": null
+  }
+
+Response 400: Invalid request
+Response 409: Idempotency key lock contention (Retry-After header included)
+Response 422: Idempotency key reused with different body, or routing error
+Response 429: Rate limit exceeded
+
+--------------------------------------------------------------------------------
+GET /v1/routes/{route_id}
+--------------------------------------------------------------------------------
+Summary:    Get Route
+Description: Retrieve a route resource by its ID. Completed routes expire
+             after 6 hours.
+Tags:       Routes
+
+Path Parameters:
+  route_id (required, string) - Route resource ID (prefixed with "route_")
+
+Response 200: Route resource found
+  Body: RouteResource
+
+Response 404: Route not found or expired
+  {
+    "error": {
+      "type": "invalid_request_error",
+      "code": "route_not_found",
+      "message": "Route route_01HYX3MPK5XJQJG0NB0PRSDVWC not found.",
+      "param": "route_id"
+    }
+  }
+
+--------------------------------------------------------------------------------
+DELETE /v1/routes/{route_id}
+--------------------------------------------------------------------------------
+Summary:    Delete Route
+Description: Permanently deletes a route and its associated telemetry data.
+Tags:       Routes
+
+Path Parameters:
+  route_id (required, string) - Route resource ID (prefixed with "route_")
+
+Response 200: Route deleted successfully
+  {
+    "id": "route_01HYX3MPK5XJQJG0NB0PRSDVWC",
+    "object": "route",
+    "deleted": true
+  }
+
+Response 404: Route not found
+
+--------------------------------------------------------------------------------
+GET /v1/routes/{route_id}/telemetry
+--------------------------------------------------------------------------------
+Summary:    Get Route Telemetry
+Description: Returns paginated segment-level physics data (grade, curvature,
+             fuel burn) for a completed route.
+Tags:       Telemetry
+
+Path Parameters:
+  route_id (required, string) - Route resource ID
+
+Query Parameters:
+  cursor (optional, integer, default: 0)  - Pagination offset
+  limit  (optional, integer, default: 50) - Segments per page (max 200)
+
+Response 200: Telemetry data
+  Body: TelemetryResponse
+
+Response 404: Route not found or still processing
+
+================================================================================
+SCHEMAS
+================================================================================
+
+--------------------------------------------------------------------------------
+ComputeRoutesRequest
+--------------------------------------------------------------------------------
+Request body for route computation. Accepts all Google Routes API fields;
+unsupported fields are silently ignored.
+
+Required fields:
+  origin       (Waypoint) - Origin waypoint
+  destination  (Waypoint) - Destination waypoint
+
+Optional fields:
+  intermediates            (Waypoint[])    - Intermediate waypoints
+  travelMode               (string)        - Only "DRIVE" supported
+  routingPreference         (string)        - Default: "TRAFFIC_UNAWARE"
+  departureTime             (date-time)     - ISO 8601 UTC. Affects school zone detection.
+  computeAlternativeRoutes  (boolean)       - Up to 3 alternatives when true
+  routeModifiers            (RouteModifiers)
+  languageCode              (string)        - Default: "en-US"
+  vehicleSpec               (VehicleSpec)   - Defaults to SEMI_TRAILER preset
+  routingProfile            (string)        - "balanced" | "fuel_optimal" | "time_optimal"
+  profileOverrides          (object)        - Override individual profile weights
+  webhookUrl                (string, uri)   - Webhook for async notifications (POST /v1/routes only)
+
+--------------------------------------------------------------------------------
+Waypoint
+--------------------------------------------------------------------------------
+Only location with latLng is supported. placeId and address are not supported.
+
+  location         (Location)  - Required. Must use latLng coordinates.
+  via              (boolean)   - Pass-through point if true. Default: false.
+  vehicleStopover  (boolean)   - Google compat, ignored.
+  sideOfRoad       (boolean)   - Google compat, ignored.
+
+--------------------------------------------------------------------------------
+VehicleSpec
+--------------------------------------------------------------------------------
+Vehicle specification for physics-based enrichment. All fields optional;
+unset fields fall back to the preset for the given type.
+
+  type                  (string)  - "SEMI_TRAILER" | "BOX_TRUCK". Default: "SEMI_TRAILER"
+  grossWeightKg         (number)  - e.g. 36000
+  dragCoefficient       (number)  - e.g. 0.65
+  frontalAreaM2         (number)  - e.g. 9.0
+  rollingResistance     (number)  - e.g. 0.007
+  heightM               (number)  - e.g. 4.11
+  widthM                (number)  - e.g. 2.6
+  lengthM               (number)  - e.g. 21.64
+  axleLoadTonnes        (number)  - e.g. 9.0
+  fuelType              (string)  - Default: "DIESEL"
+  idleFuelLitersPerHour (number)  - e.g. 2.5
+  engineEfficiency      (number)  - 0-1, e.g. 0.4
+
+--------------------------------------------------------------------------------
+RouteModifiers
+--------------------------------------------------------------------------------
+  avoidTolls     (boolean) - Default: false
+  avoidHighways  (boolean) - Default: false
+  avoidFerries   (boolean) - Default: false
+  avoidIndoor    (boolean) - Google compat, ignored.
+
+--------------------------------------------------------------------------------
+RouteResource
+--------------------------------------------------------------------------------
+A route resource returned by the /v1/routes endpoints.
+
+  id             (string)     - Unique route ID (prefixed with "route_")
+  object         (string)     - Always "route"
+  status         (string)     - "processing" | "complete" | "failed"
+    - processing: route is still being computed (routes array is empty)
+    - complete:   route computation finished (routes array is populated)
+    - failed:     route computation failed (error object is populated)
+  createdAt      (date-time)  - ISO 8601 UTC timestamp
+  routes         (Route[])    - Computed routes (empty while processing)
+  fallbackInfo   (object|null)
+  geocodingResults (object|null)
+  warnings       (string[])
+  error          (object|null) - Populated when status is "failed"
+    - code    (string)
+    - message (string)
+
+--------------------------------------------------------------------------------
+Route
+--------------------------------------------------------------------------------
+A computed route. Matches Google's Route object with enrichment on each step.
+
+  routeLabels     (string[])  - "DEFAULT_ROUTE" | "DEFAULT_ROUTE_ALTERNATE"
+  legs            (RouteLeg[])
+  distanceMeters  (integer)   - Total route distance in meters
+  duration        (string)    - e.g. "3600s"
+  staticDuration  (string)    - Same as duration (traffic not modeled)
+  polyline        (Polyline)  - Full route polyline
+  description     (string)
+  warnings        (string[])
+  viewport        (Viewport)  - Bounding box
+
+--------------------------------------------------------------------------------
+RouteLeg
+--------------------------------------------------------------------------------
+A leg between two consecutive stops. Matches Google's RouteLeg.
+
+  distanceMeters  (integer)
+  duration        (string)
+  staticDuration  (string)
+  polyline        (Polyline)
+  startLocation   (object with latLng)
+  endLocation     (object with latLng)
+  steps           (RouteLegStep[])
+
+--------------------------------------------------------------------------------
+RouteLegStep
+--------------------------------------------------------------------------------
+A step within a route leg. Matches Google's RouteLegStep with an additional
+enrichment field.
+
+  distanceMeters        (integer)
+  staticDuration        (string)     - e.g. "28s"
+  polyline              (Polyline)
+  startLocation         (object with latLng)
+  endLocation           (object with latLng)
+  navigationInstruction (NavigationInstruction)
+  travelMode            (string)     - Always "DRIVE"
+  enrichment            (StepEnrichment) - Physics enrichment data (Motion extension)
+
+--------------------------------------------------------------------------------
+StepEnrichment
+--------------------------------------------------------------------------------
+Physics-based enrichment data for a route step.
+
+  gradePercent            (number|null) - Road grade % (positive=uphill)
+  curvatureDegreesPerKm   (number|null) - Bearing change per km
+  fuelBurnLiters          (number|null) - Estimated fuel burn in liters
+  zoneFlags               (string[])   - "SCHOOL_ZONE" | "RESIDENTIAL"
+  speedLimitKmh           (number|null) - Speed limit in km/h
+  roadClass               (string|null) - MOTORWAY | TRUNK | PRIMARY | SECONDARY
+                                          | TERTIARY | UNCLASSIFIED | RESIDENTIAL
+                                          | SERVICE_ROAD
+  degradedFields          (string[])   - Fields that could not be computed
+  degradedReason          (string|null) - Reason for degradation
+
+--------------------------------------------------------------------------------
+NavigationInstruction
+--------------------------------------------------------------------------------
+  maneuver      (string) - DEPART | STRAIGHT | NAME_CHANGE | TURN_SLIGHT_RIGHT
+                           | TURN_RIGHT | TURN_SHARP_RIGHT | TURN_SLIGHT_LEFT
+                           | TURN_LEFT | TURN_SHARP_LEFT | UTURN_RIGHT
+                           | UTURN_LEFT | RAMP_RIGHT | RAMP_LEFT | FORK_RIGHT
+                           | FORK_LEFT | MERGE | ROUNDABOUT_RIGHT
+                           | ROUNDABOUT_LEFT | FERRY | FERRY_TRAIN
+                           | MANEUVER_UNSPECIFIED
+  instructions  (string) - Human-readable instruction text
+
+--------------------------------------------------------------------------------
+TelemetryResponse
+--------------------------------------------------------------------------------
+  routeId      (string)
+  computedAt   (date-time)
+  vehicleSpec  (object)        - Resolved vehicle spec used
+  summary      (TelemetrySummary)
+  segments     (TelemetrySegment[])
+  hasMore      (boolean)       - More segments available?
+  nextCursor   (string|null)   - Cursor for next page
+
+--------------------------------------------------------------------------------
+TelemetrySummary
+--------------------------------------------------------------------------------
+  totalFuelBurnLiters          (number|null)
+  totalGradeGainMeters         (number|null)
+  totalGradeLossMeters         (number|null)
+  maxGradePercent              (number|null)
+  averageCurvatureDegreesPerKm (number|null)
+  schoolZoneCount              (integer)     - Default: 0
+  residentialSegmentCount      (integer)     - Default: 0
+
+--------------------------------------------------------------------------------
+TelemetrySegment
+--------------------------------------------------------------------------------
+  index                  (integer)
+  startLocation          (object with latLng)
+  endLocation            (object with latLng)
+  distanceMeters         (integer)
+  durationSeconds        (integer)
+  gradePercent           (number|null)
+  curvatureDegreesPerKm  (number|null)
+  fuelBurnLiters         (number|null)
+  zoneFlags              (string[])
+  speedLimitKmh          (number|null)
+  roadClass              (string|null)
+
+--------------------------------------------------------------------------------
+ErrorResponse
+--------------------------------------------------------------------------------
+  error (ErrorDetail)
+
+--------------------------------------------------------------------------------
+ErrorDetail
+--------------------------------------------------------------------------------
+  type     (string) - invalid_request_error | routing_error | rate_limit_error
+                      | api_error | enrichment_error
+  code     (string) - Machine-readable error code (e.g. "route_not_found")
+  message  (string) - Human-readable error message
+  param    (string|null) - Parameter that caused the error
+  doc_url  (string|null) - URL to relevant documentation
+
+--------------------------------------------------------------------------------
+WebhookEvent
+--------------------------------------------------------------------------------
+Sent to your webhookUrl when async route computation completes or fails.
+
+  id        (string)    - Unique event ID (prefixed with "evt_")
+  type      (string)    - "route.complete" | "route.failed"
+  createdAt (date-time) - ISO 8601 UTC timestamp
+  data      (object)
+    routeId (string)
+    status  (string)    - "complete" | "failed"
+    error   (object|null) - Only on "route.failed" events
+      code    (string)
+      message (string)
+
+Example (route.complete):
+  {
+    "id": "evt_01HYX4MPK5XJQJG0NB0PRSDVWC",
+    "type": "route.complete",
+    "createdAt": "2026-02-28T15:12:35Z",
+    "data": {
+      "routeId": "route_01HYX3MPK5XJQJG0NB0PRSDVWC",
+      "status": "complete"
+    }
+  }
+
+Example (route.failed):
+  {
+    "id": "evt_01HYX4MPK5XJQJG0NB0PRSDVWC",
+    "type": "route.failed",
+    "createdAt": "2026-02-28T15:12:35Z",
+    "data": {
+      "routeId": "route_01HYX3MPK5XJQJG0NB0PRSDVWC",
+      "status": "failed",
+      "error": {
+        "code": "no_route_found",
+        "message": "No route could be found between the given locations."
+      }
+    }
+  }

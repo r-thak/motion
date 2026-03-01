@@ -61,21 +61,6 @@ VALHALLA_MANEUVER_TO_GOOGLE: dict[int, str] = {
     38: "MERGE",                # kMergeLeft
 }
 
-MANEUVER_STRESS: dict[str, tuple[float, float]] = {
-    "TURN_LEFT":         (0.50, 2.0),
-    "TURN_SHARP_LEFT":   (0.55, 2.0),
-    "UTURN_LEFT":        (0.60, 2.0),
-    "UTURN_RIGHT":       (0.60, 2.0),
-    "MERGE":             (0.30, 1.5),
-    "RAMP_RIGHT":        (0.20, 1.0),
-    "RAMP_LEFT":         (0.25, 1.5),
-    "ROUNDABOUT_RIGHT":  (0.35, 1.5),
-    "ROUNDABOUT_LEFT":   (0.35, 1.5),
-    "FORK_LEFT":         (0.25, 1.5),
-    "FORK_RIGHT":        (0.20, 1.0),
-    "FERRY":             (0.10, 0.5),
-    "FERRY_TRAIN":       (0.10, 0.5),
-}
 
 VALHALLA_ROAD_CLASS: dict[str, str] = {
     "motorway": "MOTORWAY",
@@ -132,9 +117,10 @@ def translate_request(
         "type": "break",
     })
 
-    # 2. Build costing options
+    # 2. Build costing options — base vehicle parameters
+    weight_tonnes = resolved_vehicle["grossWeightKg"] / 1000
     costing_options = {
-        "weight": resolved_vehicle["grossWeightKg"] / 1000,  # Valhalla wants tonnes
+        "weight": weight_tonnes,  # Valhalla wants tonnes
         "height": resolved_vehicle["heightM"],
         "width": resolved_vehicle["widthM"],
         "length": resolved_vehicle["lengthM"],
@@ -143,6 +129,45 @@ def translate_request(
         "use_highways": 0.0 if request.routeModifiers.avoidHighways else 1.0,
         "use_ferry": 0.0 if request.routeModifiers.avoidFerries else 1.0,
     }
+
+    # ─── Grade & Turn Avoidance ───────────────────────────────────────
+    # use_hills:  0.0 = max hill avoidance, 1.0 = ignore hills (default 0.5)
+    # maneuver_penalty: seconds added per turn/maneuver (default 5)
+    # service_penalty:  seconds added for using service roads (default 0)
+    #
+    # Map routing profiles → Valhalla costing parameters so the route
+    # itself (not just post-hoc enrichment scores) favors lower grade
+    # and fewer turns.
+    #
+    # Heavy vehicles (>20t) get stronger penalties because turns and
+    # hills cost them disproportionately more fuel.
+
+    profile = request.routingProfile
+    heavy = weight_tonnes >= 20  # semi-trailers, heavy rigs
+
+    PROFILE_COSTING = {
+        #                  use_hills  maneuver_penalty    service_penalty  use_living_streets
+        "fuel_optimal":   (0.0,       80 if heavy else 50, 100,          0.1),
+        "balanced":       (0.5,       15 if heavy else  8,  15,          0.5),
+        "time_optimal":   (1.0,        0,                   0,           1.0),
+    }
+
+    use_hills, maneuver_penalty, service_penalty, use_living = PROFILE_COSTING.get(
+        profile, PROFILE_COSTING["balanced"]
+    )
+
+    costing_options["use_hills"] = use_hills
+    costing_options["maneuver_penalty"] = maneuver_penalty
+    costing_options["service_penalty"] = service_penalty
+    costing_options["use_living_streets"] = use_living
+
+    # Also apply profile overrides if the user explicitly set them
+    overrides = request.profileOverrides
+    if "hillAvoidance" in overrides:
+        # User override: 0.0 = ignore hills, 1.0 = max avoidance
+        costing_options["use_hills"] = max(0.0, min(1.0, 1.0 - overrides["hillAvoidance"]))
+    if "turnPenalty" in overrides:
+        costing_options["maneuver_penalty"] = max(0, min(60, overrides["turnPenalty"]))
 
     # 3. Build date_time
     date_time = None

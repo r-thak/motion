@@ -22,7 +22,6 @@ def upgrade() -> None:
             request_hash    BYTEA NOT NULL,
             response_body   JSONB,
             telemetry       JSONB,
-            driver_state    JSONB,
             vehicle_spec    JSONB NOT NULL,
             departure_time  TIMESTAMPTZ,
             webhook_url     TEXT,
