@@ -6,6 +6,7 @@ from contextlib import asynccontextmanager
 import asyncpg
 import httpx
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from src.config import settings
 from src.middleware.errors import register_error_handlers
@@ -85,6 +86,26 @@ app = FastAPI(
     version="1.0.0",
     description="Drop-in replacement for Google Routes API with segment-level physics enrichment for heavy freight.",
     lifespan=lifespan,
+)
+
+# Register CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "https://demo.rthak.com", 
+        "https://demo1.rthak.com",
+        "https://demo2.rthak.com",
+        "http://localhost:8000", 
+        "http://localhost:8001", 
+        "http://localhost:8002",
+        "http://127.0.0.1:8000",
+        "http://127.0.0.1:8001",
+        "http://127.0.0.1:8002"
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+    expose_headers=["X-Route-Id"],
 )
 
 # Register error handlers

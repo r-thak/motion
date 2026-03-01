@@ -237,7 +237,8 @@ def build_app(real_mode: bool = False) -> FastAPI:
         CORSMiddleware,
         allow_origins=[
             "https://demo.rthak.com", 
-            "https://demo1.rthak.com", 
+            "https://demo1.rthak.com",
+            "https://demo2.rthak.com",
             "http://localhost:8000", 
             "http://localhost:8001", 
             "http://localhost:8002",
