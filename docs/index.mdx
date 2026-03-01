@@ -1,97 +1,98 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
+title: 'API Reference'
+description: 'Motion Freight Router API — truck routing with physics-based enrichment'
 ---
 
-## Setting up
+## Overview
 
-Get your documentation site up and running in minutes.
+Motion computes optimized truck routes enriched with segment-level physics data — grade, curvature, fuel consumption, driver stress, and zone awareness. It exposes two interfaces to the same routing engine:
 
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
-</Card>
-
-## Make it yours
-
-Design a docs site that looks great and empowers your users.
-
-<Columns cols={2}>
-  <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
-  >
-    Edit your docs locally and preview them in real time.
+<CardGroup cols={2}>
+  <Card title="Google-Compatible" icon="arrows-rotate" href="/endpoint/google-compute-routes">
+    Drop-in replacement for Google Routes API. Same request and response format — change only the base URL.
   </Card>
-  <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
-  >
-    Customize the design and colors of your site to match your brand.
+  <Card title="Route Resources" icon="route" href="/endpoint/create-route">
+    Create, retrieve, and manage route resources with async support, webhooks, and telemetry.
   </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
-  </Card>
-  <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
-  >
-    Auto-generate API documentation from OpenAPI specifications.
-  </Card>
-</Columns>
+</CardGroup>
 
-## Create beautiful pages
+## Endpoints
 
-Everything you need to create world-class documentation.
+### Google-Compatible
 
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
-  </Card>
-  <Card
-    title="Code samples"
-    icon="code"
-    href="/essentials/code"
-  >
-    Add sample code to demonstrate how to use your product.
-  </Card>
-  <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
-  >
-    Display images and other media.
-  </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
-  </Card>
-</Columns>
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/directions/v2:computeRoutes` | Compute a route synchronously (Google Routes API format) |
 
-## Need inspiration?
+### Route Management
 
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/v1/routes` | Create a route (returns immediately or asynchronously) |
+| `GET` | `/v1/routes/{route_id}` | Retrieve a route by ID |
+| `DELETE` | `/v1/routes/{route_id}` | Delete a route |
+| `GET` | `/v1/routes/{route_id}/telemetry` | Get segment-level telemetry data |
+| `PATCH` | `/v1/routes/{route_id}/driver-state` | Update driver state and re-score enrichment |
+
+## Enrichment
+
+Every route step is enriched with physics data computed from elevation models, road geometry, and vehicle parameters:
+
+| Field | Description |
+|-------|-------------|
+| `gradePercent` | Road grade derived from USGS elevation data |
+| `curvatureDegreesPerKm` | Bearing change per kilometer |
+| `fuelBurnLiters` | Fuel consumption estimate using road-load equations |
+| `stressFactor` | Driver stress score based on maneuvers, grade, zones, and fatigue |
+| `zoneFlags` | School zone and residential area detection |
+| `speedLimitKmh` | Posted speed limit |
+| `roadClass` | Road classification (motorway, primary, residential, etc.) |
+
+## Vehicle Presets
+
+Two built-in presets are available. All parameters can be individually overridden in the request.
+
+| Preset | Weight | Dimensions (L × W × H) |
+|--------|--------|------------------------|
+| `SEMI_TRAILER` | 36,000 kg | 21.6 × 2.6 × 4.1 m |
+| `BOX_TRUCK` | 12,000 kg | 10.0 × 2.4 × 3.5 m |
+
+## Routing Profiles
+
+Profiles control the relative weight of each enrichment factor:
+
+| Profile | Fuel | Stress | Grade | Zone |
+|---------|------|--------|-------|------|
+| `balanced` | 1.0 | 1.0 | 1.0 | 1.0 |
+| `fuel_optimal` | 2.0 | 0.5 | 1.5 | 0.5 |
+| `time_optimal` | 0.3 | 0.3 | 0.3 | 0.3 |
+| `fatigue_aware` | 0.8 | 2.0 | 1.0 | 1.5 |
+
+## Errors
+
+All error responses use a consistent structure:
+
+```json
+{
+  "error": {
+    "type": "invalid_request_error",
+    "code": "unsupported_waypoint_type",
+    "message": "Address and placeId waypoints are not supported; use latLng coordinates.",
+    "param": "origin"
+  }
+}
+```
+
+| Error type | Description |
+|------------|-------------|
+| `invalid_request_error` | The request was malformed or missing required fields |
+| `routing_error` | The routing engine could not compute a route |
+| `rate_limit_error` | Rate limit exceeded (60 requests/min per IP) |
+| `api_error` | An internal server error occurred |
+| `enrichment_error` | Enrichment data could not be computed |
+
+Rate-limited responses include `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and `X-RateLimit-Reset` headers.
+
+## Idempotency
+
+`POST /v1/routes` accepts an `Idempotency-Key` header for safe retries. Requests with the same key and body return a cached response. Reusing a key with a different body returns `422`.
