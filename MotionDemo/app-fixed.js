@@ -261,7 +261,7 @@
       const requestBody = {
         origin: formatPoint(stops[0]),
         destination: formatPoint(stops[stops.length - 1]),
-        travelMode: 'DRIVING'
+        travelMode: 'DRIVE'
       };
       const intermediates = stops.slice(1, -1);
       if (intermediates.length) {

@@ -64,7 +64,7 @@
     const requestBody = {
       origin: formatPoint(origin),
       destination: formatPoint(dest),
-      travelMode: 'DRIVING'
+      travelMode: 'DRIVE'
     };
     if (intermediates && intermediates.length) {
       requestBody.intermediates = intermediates.map(formatPoint);
@@ -119,7 +119,7 @@
     const requestBody = {
       origin: formatPoint(origin),
       destination: formatPoint(dest),
-      travelMode: 'DRIVING'
+      travelMode: 'DRIVE'
     };
     if (waypoints && waypoints.length) {
       requestBody.intermediates = waypoints.map(formatPoint);

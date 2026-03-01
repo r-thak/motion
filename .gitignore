@@ -28,6 +28,9 @@ htmlcov/
 .mypy_cache/
 .ruff_cache/
 
+# Secrets
+.env
+
 # Data and Artifacts
 *.rdb
 dump.rdb
