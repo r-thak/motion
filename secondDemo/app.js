@@ -89,13 +89,10 @@ function logResponse(endpoint, resBody) {
 async function computeRoute() {
     const profile = document.getElementById('profile-select').value;
     const vehicle = document.getElementById('vehicle-type').value;
-    const fatigue = parseFloat(document.getElementById('driver-fatigue').value);
-
     const body = {
         origin: { location: { latLng: { latitude: originLatLng.lat, longitude: originLatLng.lng } } },
         destination: { location: { latLng: { latitude: destLatLng.lat, longitude: destLatLng.lng } } },
         vehicleSpec: { type: vehicle },
-        driverState: { fatigueScore: fatigue, attentionScore: 1 - fatigue, stressLevel: fatigue * 0.5 },
         routingProfile: profile
     };
 
@@ -162,32 +159,9 @@ async function fetchTelemetry() {
     if (data.summary) {
         document.getElementById('res-fuel').innerText = `${data.summary.totalFuelBurnLiters.toFixed(2)} L`;
         document.getElementById('res-elev').innerText = `${data.summary.totalGradeGainMeters.toFixed(1)} m`;
-        document.getElementById('res-stress').innerText = data.summary.overallStressScore.toFixed(3);
     }
 }
 
-async function patchDriverState() {
-    if (!currentRouteId) return alert("Run an async route first.");
-    const fatigue = parseFloat(document.getElementById('driver-fatigue').value);
-
-    const body = {
-        fatigueScore: fatigue,
-        attentionScore: 1 - fatigue,
-        stressLevel: fatigue * 0.5
-    };
-
-    logRequest(`PATCH /v1/routes/${currentRouteId}/driver-state`, body);
-    const res = await fetch(`${API_BASE}/v1/routes/${currentRouteId}/driver-state`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body)
-    });
-    const data = await res.json();
-    logResponse(`PATCH /v1/routes/${currentRouteId}/driver-state`, data);
-
-    // Automatically fetch telemetry again to show new scores and update UI
-    fetchTelemetry();
-}
 
 async function deleteRoute() {
     if (!currentRouteId) return alert("Run an async route first.");
@@ -250,6 +224,5 @@ function renderRoute(route) {
     document.getElementById('res-duration').innerText = Math.round(parseInt(route.duration) / 60) + " mins";
     document.getElementById('res-fuel').innerText = `${totalFuel.toFixed(2)} L`;
     document.getElementById('res-elev').innerText = `${elevationGain.toFixed(1)} m`;
-    document.getElementById('res-stress').innerText = "--"; // Requires telemetry for sync, but async can poll
     document.getElementById('res-turns').innerText = turnCount.toString();
 }
