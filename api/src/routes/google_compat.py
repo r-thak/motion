@@ -53,6 +53,7 @@ def _validate_waypoints(request_body: ComputeRoutesRequest) -> None:
 
 
 @router.post("/proxy/google/directions/v2:computeRoutes")
+@router.post("/proxy/google/directions/v2/computeRoutes")
 async def proxy_google_routes(request: Request):
     """Proxy directly to Google's real Routes API to hide API key."""
     body = await request.json()
@@ -74,6 +75,7 @@ async def proxy_google_routes(request: Request):
 
 
 @router.post("/directions/v2:computeRoutes")
+@router.post("/directions/v2/computeRoutes")
 async def google_compute_routes(
     request_body: ComputeRoutesRequest,
     request: Request,

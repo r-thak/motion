@@ -113,14 +113,14 @@ async function computeRoute() {
     };
 
     if (currentMode === 'sync') {
-        logRequest("POST /directions/v2:computeRoutes", body);
-        const res = await fetch(`${API_BASE}/directions/v2:computeRoutes`, {
+        logRequest("POST /directions/v2/computeRoutes", body);
+        const res = await fetch(`${API_BASE}/directions/v2/computeRoutes`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(body)
         });
         const data = await res.json();
-        logResponse("POST /directions/v2:computeRoutes", data);
+        logResponse("POST /directions/v2/computeRoutes", data);
 
         if (data.routes && data.routes.length > 0) {
             renderRoute(data.routes[0]);

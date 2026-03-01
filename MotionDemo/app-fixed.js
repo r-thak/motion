@@ -217,7 +217,7 @@
     for (let i = 0; i < stops.length - 1; i++) {
       const o = stops[i], d = stops[i + 1];
       legPromises.push(
-        fetch(`${MOTION_API}/directions/v2:computeRoutes`, {
+        fetch(`${MOTION_API}/directions/v2/computeRoutes`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -266,7 +266,7 @@
         requestBody.intermediates = intermediates.map(formatPoint);
       }
 
-      const r = await fetch(`${MOTION_API}/proxy/google/directions/v2:computeRoutes`, {
+      const r = await fetch(`${MOTION_API}/proxy/google/directions/v2/computeRoutes`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(requestBody)
