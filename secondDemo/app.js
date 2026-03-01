@@ -70,20 +70,21 @@ function logRequest(endpointStr, reqBody) {
 
     const el = document.getElementById('log-container');
 
+    // Generator logic: produce a workable cURL command
     let curlCmd = `curl -X ${method} ${API_BASE}${path}`;
     if (reqBody) {
-        curlCmd += ` \\\n  -H "Content-Type: application/json" \\\n  -d '${JSON.stringify(reqBody)}'`;
+        curlCmd += ` \\\n  -H "Content-Type: application/json" \\\n  -d '${JSON.stringify(reqBody, null, 2)}'`;
     }
 
     const curlId = 'curl-' + Date.now() + Math.floor(Math.random() * 1000);
 
     el.innerHTML = `
-        <div class="log-entry generator-entry" style="border-left: 2px solid var(--accent); margin-bottom: 12px;">
+        <div class="log-entry generator-entry" style="border-left: 2px solid var(--accent); margin-bottom: 12px; position: relative;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                 <span class="endpoint" style="margin-bottom: 0;">${method} ${path}</span>
-                <button class="secondary-btn" style="width: auto; margin-bottom: 0; padding: 4px 8px; font-size: 11px;" onclick="copyToClipboard('${curlId}', this)">Copy Request</button>
+                <button class="secondary-btn" style="width: auto; margin-bottom: 0; padding: 4px 8px; font-size: 11px; z-index: 10;" onclick="copyToClipboard('${curlId}', this)">Copy cURL</button>
             </div>
-            <pre id="${curlId}" style="white-space: pre-wrap; word-break: break-all; color: #a5d6ff; margin: 0;">${curlCmd}</pre>
+            <pre id="${curlId}" style="white-space: pre-wrap; word-break: break-all; color: #a5d6ff; margin: 0; background: rgba(0,0,0,0.3); padding: 8px; border-radius: 4px;">${curlCmd}</pre>
         </div>` + el.innerHTML;
 }
 
