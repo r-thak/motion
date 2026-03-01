@@ -11,50 +11,50 @@
   "navigation": {
     "tabs": [
       {
-        "tab": "API reference",
+        "tab": "Docs",
         "groups": [
           {
             "group": "Overview",
             "pages": [
-              "api-reference/introduction"
+              "index"
             ]
           },
           {
             "group": "Google-Compatible",
             "pages": [
-              "api-reference/endpoint/google-compute-routes"
+              "endpoint/google-compute-routes"
             ]
           },
           {
             "group": "Routes",
             "pages": [
-              "api-reference/endpoint/create-route",
-              "api-reference/endpoint/get-route",
-              "api-reference/endpoint/delete-route"
+              "endpoint/create-route",
+              "endpoint/get-route",
+              "endpoint/delete-route"
             ]
           },
           {
             "group": "Telemetry",
             "pages": [
-              "api-reference/endpoint/get-telemetry"
+              "endpoint/get-telemetry"
             ]
           },
           {
             "group": "Driver State",
             "pages": [
-              "api-reference/endpoint/update-driver-state"
+              "endpoint/update-driver-state"
             ]
           },
           {
             "group": "Webhooks",
             "pages": [
-              "api-reference/endpoint/webhook"
+              "endpoint/webhook"
             ]
           },
           {
             "group": "Health",
             "pages": [
-              "api-reference/endpoint/health"
+              "endpoint/health"
             ]
           }
         ]
