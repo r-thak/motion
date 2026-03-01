@@ -10,7 +10,6 @@ class TelemetrySegment(BaseModel):
     gradePercent: float | None = None
     curvatureDegreesPerKm: float | None = None
     fuelBurnLiters: float | None = None
-    stressFactor: float | None = None
     zoneFlags: list[str] = Field(default_factory=list)
     speedLimitKmh: float | None = None
     roadClass: str | None = None
@@ -24,13 +23,11 @@ class TelemetrySummary(BaseModel):
     averageCurvatureDegreesPerKm: float | None = None
     schoolZoneCount: int = 0
     residentialSegmentCount: int = 0
-    overallStressScore: float | None = None
 
 
 class TelemetryResponse(BaseModel):
     routeId: str
     computedAt: str
-    driverState: dict | None = None
     vehicleSpec: dict
     summary: TelemetrySummary
     segments: list[TelemetrySegment]

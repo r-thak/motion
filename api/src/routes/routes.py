@@ -11,7 +11,6 @@ from ulid import ULID
 from src.config import settings
 from src.middleware.errors import RouteNotFoundError
 from src.middleware.idempotency import check_idempotency, save_idempotency_response
-from src.models.driver import DriverState
 from src.models.request import ComputeRoutesRequest
 from src.models.response import RouteResource
 from src.models.vehicle import resolve_vehicle_spec
@@ -95,9 +94,8 @@ async def create_route_endpoint(
     # 4. Validate waypoints
     _validate_waypoints(request_body)
 
-    # 5. Resolve vehicle spec and driver state
+    # 5. Resolve vehicle spec
     resolved_vehicle = resolve_vehicle_spec(request_body.vehicleSpec)
-    driver_state = request_body.driverState or DriverState()
 
     # 6. Create route record with status: "processing"
     created_at = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
@@ -109,7 +107,6 @@ async def create_route_endpoint(
         request_hash=request_hash,
         response_body=None,
         telemetry=None,
-        driver_state=driver_state.model_dump(),
         vehicle_spec=resolved_vehicle,
         departure_time=request_body.departureTime,
         webhook_url=request_body.webhookUrl,
@@ -126,7 +123,7 @@ async def create_route_endpoint(
         )
         routes, all_step_points = translate_response(valhalla_response, route_id)
         telemetry_list = await enrich_routes(
-            routes, all_step_points, resolved_vehicle, driver_state,
+            routes, all_step_points, resolved_vehicle,
             request_body.departureTime, request_body.routingProfile,
             request_body.profileOverrides, zone_index, http_client,
             redis_client, settings,
@@ -197,7 +194,7 @@ async def create_route_endpoint(
         # Fast-path timed out — run computation in background
         background_tasks.add_task(
             compute_route_background,
-            route_id, request_body, resolved_vehicle, driver_state,
+            route_id, request_body, resolved_vehicle,
             pg_pool, redis_client, http_client, zone_index, settings,
         )
 

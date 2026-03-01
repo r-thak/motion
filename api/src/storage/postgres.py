@@ -12,7 +12,6 @@ async def create_route(
     request_hash: bytes,
     response_body: dict | None,
     telemetry: dict | None,
-    driver_state: dict | None,
     vehicle_spec: dict,
     departure_time: str | None,
     webhook_url: str | None,
@@ -25,8 +24,8 @@ async def create_route(
     await pool.execute(
         """
         INSERT INTO routes (id, status, request_body, request_hash, response_body,
-                           telemetry, driver_state, vehicle_spec, departure_time, webhook_url)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+                           telemetry, vehicle_spec, departure_time, webhook_url)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
         """,
         route_id,
         status,
@@ -34,7 +33,6 @@ async def create_route(
         request_hash,
         json.dumps(response_body) if response_body else None,
         json.dumps(telemetry) if telemetry else None,
-        json.dumps(driver_state) if driver_state else None,
         json.dumps(vehicle_spec),
         dep_time,
         webhook_url,
@@ -80,7 +78,7 @@ async def get_route(pool: asyncpg.Pool, route_id: str) -> dict | None:
     row = await pool.fetchrow(
         """
         SELECT id, object, status, request_body, response_body, telemetry,
-               driver_state, vehicle_spec, error, created_at, expires_at, webhook_url
+               vehicle_spec, error, created_at, expires_at, webhook_url
         FROM routes
         WHERE id=$1 AND expires_at > now()
         """,
@@ -95,7 +93,6 @@ async def get_route(pool: asyncpg.Pool, route_id: str) -> dict | None:
         "request_body": json.loads(row["request_body"]) if row["request_body"] else None,
         "response_body": json.loads(row["response_body"]) if row["response_body"] else None,
         "telemetry": json.loads(row["telemetry"]) if row["telemetry"] else None,
-        "driver_state": json.loads(row["driver_state"]) if row["driver_state"] else None,
         "vehicle_spec": json.loads(row["vehicle_spec"]) if row["vehicle_spec"] else None,
         "error": json.loads(row["error"]) if row["error"] else None,
         "created_at": row["created_at"].isoformat().replace("+00:00", "Z"),
@@ -103,25 +100,7 @@ async def get_route(pool: asyncpg.Pool, route_id: str) -> dict | None:
     }
 
 
-async def update_driver_state(
-    pool: asyncpg.Pool,
-    route_id: str,
-    driver_state: dict,
-    telemetry: dict,
-    response_body: dict,
-) -> bool:
-    """UPDATE driver_state, telemetry, response_body. Return False if not found."""
-    result = await pool.execute(
-        """
-        UPDATE routes SET driver_state=$2, telemetry=$3, response_body=$4
-        WHERE id=$1 AND expires_at > now()
-        """,
-        route_id,
-        json.dumps(driver_state),
-        json.dumps(telemetry),
-        json.dumps(response_body),
-    )
-    return result != "UPDATE 0"
+
 
 
 async def delete_route(pool: asyncpg.Pool, route_id: str) -> bool:

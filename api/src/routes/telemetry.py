@@ -44,6 +44,7 @@ async def get_route_telemetry(
                         "code": "route_processing",
                         "message": "Route is still processing. Poll GET /v1/routes/{route_id} until status is 'complete'.",
                         "param": "route_id",
+                        "doc_url": None,
                     }
                 },
             )
@@ -57,6 +58,7 @@ async def get_route_telemetry(
                         "code": "route_failed",
                         "message": "Route computation failed.",
                         "param": "route_id",
+                        "doc_url": None,
                     }
                 },
             )
@@ -70,6 +72,8 @@ async def get_route_telemetry(
                         "type": "invalid_request_error",
                         "code": "no_telemetry",
                         "message": "No telemetry data available for this route.",
+                        "param": None,
+                        "doc_url": None,
                     }
                 },
             )

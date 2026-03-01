@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Motion Route Demo — Fuel‑Efficient vs Standard Routing</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <h1 class="logo">Motion Route</h1>
+      <p class="tagline">Fuel‑efficient routing demo</p>
+
+      <section class="config-section">
+        <label for="api-key">Google API key <span class="required">(required)</span></label>
+        <input id="api-key" type="password" placeholder="Paste your API key here" autocomplete="off" />
+        <label for="our-api-url">Our route API URL <span class="muted">(optional)</span></label>
+        <input id="our-api-url" type="url" placeholder="https://your-api.com/directions" />
+        <p class="config-hint">Enable <strong>Maps JavaScript API</strong> and <strong>Routes API</strong>. Waypoints
+          from 75 saved SF locations; routes use Google for road geometry.</p>
+        <p class="config-hint"><a href="demo-fixed.html">Our Model vs Baseline</a> — uses Motion API (no Google key
+          needed, requires <code>localhost:8000</code>).</p>
+        <button type="button" id="btn-start" class="btn-start">Start simulation</button>
+      </section>
+
+      <section class="stats-section our-method">
+        <h2>Our Method</h2>
+        <p class="stats-desc">Slope + curvature + vehicle size</p>
+        <dl class="stats">
+          <dt>Total distance</dt>
+          <dd id="our-distance">—</dd>
+          <dt>Total fuel (L)</dt>
+          <dd id="our-fuel">—</dd>
+          <dt>Elevation gain (m)</dt>
+          <dd id="our-elev-gain">—</dd>
+          <dt>Turn penalty</dt>
+          <dd id="our-turns">—</dd>
+          <dt>Vehicles</dt>
+          <dd id="our-vehicles">—</dd>
+        </dl>
+      </section>
+
+      <section class="stats-section other-method">
+        <h2>Google Maps</h2>
+        <p class="stats-desc">Directions API (real routes)</p>
+        <dl class="stats">
+          <dt>Total distance</dt>
+          <dd id="other-distance">—</dd>
+          <dt>Total fuel (L)</dt>
+          <dd id="other-fuel">—</dd>
+          <dt>Elevation gain (m)</dt>
+          <dd id="other-elev-gain">—</dd>
+          <dt>Turn penalty</dt>
+          <dd id="other-turns">—</dd>
+          <dt>Vehicles</dt>
+          <dd id="other-vehicles">—</dd>
+        </dl>
+      </section>
+
+      <section class="comparison">
+        <h3>Comparison</h3>
+        <p id="comparison-text">Run simulation to compare.</p>
+      </section>
+
+      <p class="region">Region: San Francisco, CA</p>
+    </aside>
+
+    <main class="maps-container">
+      <div class="map-panel our-panel">
+        <div class="panel-label our-label">Our Method</div>
+        <div id="map-our" class="map"></div>
+      </div>
+      <div class="map-panel other-panel">
+        <div class="panel-label other-label">Google Maps</div>
+        <div id="map-other" class="map"></div>
+      </div>
+    </main>
+
+    <div class="status-bar">
+      <span id="status">Loading…</span>
+      <span id="cycle">Cycle 1</span>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="waypoints-sf.js"></script>
+  <script src="app.js"></script>
+</body>
+
+</html>

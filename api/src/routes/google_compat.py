@@ -3,13 +3,12 @@
 import json
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Header, Request
 from fastapi.responses import JSONResponse
 from ulid import ULID
 
 from src.config import settings
 from src.middleware.errors import ValidationError
-from src.models.driver import DriverState
 from src.models.request import ComputeRoutesRequest
 from src.models.response import GoogleComputeRoutesResponse, RouteResource
 from src.models.vehicle import resolve_vehicle_spec
@@ -57,6 +56,7 @@ def _validate_waypoints(request_body: ComputeRoutesRequest) -> None:
 async def google_compute_routes(
     request_body: ComputeRoutesRequest,
     request: Request,
+    x_goog_fieldmask: str | None = Header(None, alias="X-Goog-FieldMask"),
 ):
     """Google-compatible synchronous route computation endpoint."""
     # 1. Validate waypoints
@@ -65,9 +65,8 @@ async def google_compute_routes(
     # 2. Generate route ID
     route_id = f"route_{ULID()}"
 
-    # 3. Resolve vehicle spec and driver state
+    # 3. Resolve vehicle spec
     resolved_vehicle = resolve_vehicle_spec(request_body.vehicleSpec)
-    driver_state = request_body.driverState or DriverState()
 
     # 4. Translate request
     locations, costing_options, date_time, alternates = translate_request(
@@ -96,7 +95,6 @@ async def google_compute_routes(
         routes,
         all_step_points,
         resolved_vehicle,
-        driver_state,
         request_body.departureTime,
         request_body.routingProfile,
         request_body.profileOverrides,
@@ -127,7 +125,6 @@ async def google_compute_routes(
         request_hash=request_hash,
         response_body=response_data,
         telemetry=telemetry_data,
-        driver_state=driver_state.model_dump(),
         vehicle_spec=resolved_vehicle,
         departure_time=request_body.departureTime,
         webhook_url=None,

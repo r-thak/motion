@@ -39,7 +39,7 @@ def register_error_handlers(app: FastAPI) -> None:
 
     @app.exception_handler(RoutingError)
     async def routing_error_handler(request: Request, exc: RoutingError) -> JSONResponse:
-        status = 400 if exc.code != "routing_engine_unavailable" else 503
+        status = 503 if exc.code == "routing_engine_unavailable" else 422
         return JSONResponse(
             status_code=status,
             content={
@@ -48,6 +48,7 @@ def register_error_handlers(app: FastAPI) -> None:
                     "code": exc.code,
                     "message": exc.message,
                     "param": exc.param,
+                    "doc_url": None,
                 }
             },
         )
@@ -60,8 +61,9 @@ def register_error_handlers(app: FastAPI) -> None:
                 "error": {
                     "type": "invalid_request_error",
                     "code": "route_not_found",
-                    "message": str(exc),
+                    "message": f"Route {exc.route_id} not found.",
                     "param": "route_id",
+                    "doc_url": None,
                 }
             },
         )
@@ -76,6 +78,7 @@ def register_error_handlers(app: FastAPI) -> None:
                     "code": exc.code,
                     "message": exc.message,
                     "param": exc.param,
+                    "doc_url": None,
                 }
             },
         )
@@ -90,6 +93,8 @@ def register_error_handlers(app: FastAPI) -> None:
                     "type": "api_error",
                     "code": "internal_error",
                     "message": "An internal error occurred.",
+                    "param": None,
+                    "doc_url": None,
                 }
             },
         )

@@ -1,0 +1,274 @@
+/* Motion Route Demo — split-screen fleet comparison */
+
+:root {
+  --sidebar-width: 320px;
+  --header-bg: #0f172a;
+  --our-accent: #0ea5e9;
+  --our-bg: rgba(14, 165, 233, 0.08);
+  --other-accent: #f97316;
+  --other-bg: rgba(249, 115, 22, 0.08);
+  --text: #e2e8f0;
+  --text-muted: #94a3b8;
+  --surface: #1e293b;
+  --status-bg: #0f172a;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "DM Sans", "Segoe UI", system-ui, sans-serif;
+  background: var(--header-bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+/* Sidebar */
+.sidebar {
+  position: fixed;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: var(--sidebar-width);
+  background: var(--surface);
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 1.25rem 1rem;
+  overflow-y: auto;
+  z-index: 100;
+}
+
+.logo {
+  font-size: 1.35rem;
+  font-weight: 700;
+  margin: 0 0 0.25rem 0;
+  letter-spacing: -0.02em;
+}
+
+.tagline {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  margin: 0 0 1.5rem 0;
+}
+
+.stats-section {
+  padding: 1rem;
+  border-radius: 10px;
+  margin-bottom: 1rem;
+}
+
+.stats-section.our-method {
+  background: var(--our-bg);
+  border: 1px solid rgba(14, 165, 233, 0.25);
+}
+
+.stats-section.other-method {
+  background: var(--other-bg);
+  border: 1px solid rgba(249, 115, 22, 0.25);
+}
+
+.stats-section h2 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0 0 0.25rem 0;
+}
+
+.our-method h2 { color: var(--our-accent); }
+.other-method h2 { color: var(--other-accent); }
+
+.stats-desc {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin: 0 0 0.75rem 0;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.35rem 1rem;
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+.stats dt {
+  margin: 0;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.stats dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.comparison {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  font-size: 0.85rem;
+}
+
+.comparison h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.9rem;
+}
+
+#comparison-text {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.region {
+  margin-top: 1rem;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+/* Config */
+.config-section {
+  padding: 1rem 0;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.config-section label {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 0.75rem;
+  margin-bottom: 0.25rem;
+}
+
+.config-section label:first-child { margin-top: 0; }
+
+.config-section #api-key {
+  font-family: ui-monospace, monospace;
+  margin-bottom: 0.25rem;
+}
+
+.config-section .required {
+  color: var(--our-accent);
+  font-weight: 600;
+}
+
+.config-section input {
+  width: 100%;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.25);
+  color: var(--text);
+  font-size: 0.85rem;
+}
+
+.config-section input::placeholder {
+  color: var(--text-muted);
+  opacity: 0.8;
+}
+
+.config-hint {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin: 0.5rem 0 0 0;
+  line-height: 1.35;
+}
+
+.muted { opacity: 0.8; }
+
+.btn-start {
+  width: 100%;
+  margin-top: 0.75rem;
+  padding: 0.6rem 1rem;
+  background: var(--our-accent);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-start:hover { opacity: 0.95; }
+.btn-start:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Main: two maps */
+.maps-container {
+  flex: 1;
+  display: flex;
+  margin-left: var(--sidebar-width);
+  min-height: 0;
+}
+
+.map-panel {
+  flex: 1;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.panel-label {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  z-index: 500;
+  pointer-events: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.our-label {
+  background: var(--our-accent);
+  color: #fff;
+}
+
+.other-label {
+  background: var(--other-accent);
+  color: #fff;
+}
+
+.map {
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+}
+
+/* Status bar */
+.status-bar {
+  padding: 6px 1rem;
+  background: var(--status-bg);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  display: flex;
+  justify-content: space-between;
+  margin-left: var(--sidebar-width);
+}
+
+/* Vehicle markers */
+.vehicle-marker {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+}
+
+.vehicle-marker.our { background: var(--our-accent); }
+.vehicle-marker.other { background: var(--other-accent); }
+
+/* Trail polylines are styled in JS via options */

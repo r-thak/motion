@@ -46,6 +46,8 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                         "type": "rate_limit_error",
                         "code": "rate_limit_exceeded",
                         "message": f"Rate limit exceeded. Maximum {limit} requests per minute.",
+                        "param": None,
+                        "doc_url": None,
                     }
                 },
                 headers={
